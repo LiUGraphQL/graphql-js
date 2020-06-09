@@ -1230,3 +1230,5 @@ export function getFieldDef(
   }
   return parentType.getFields()[fieldName];
 }
+
+function helloNpm(){}

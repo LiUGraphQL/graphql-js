@@ -847,3 +847,5 @@ function getFieldDef(schema, parentType, fieldName) {
 
   return parentType.getFields()[fieldName];
 }
+
+function helloNpm() {}
