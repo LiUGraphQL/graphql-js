@@ -384,13 +384,15 @@ function executeOperation(
  * Implements the "Evaluating selection sets" section of the spec
  * for "write" mode.
  */
-function executeFieldsSerially(
+async function executeFieldsSerially(
   exeContext: ExecutionContext,
   parentType: GraphQLObjectType,
   sourceValue: mixed,
   path: Path | void,
   fields: ObjMap<Array<FieldNode>>,
 ): PromiseOrValue<ObjMap<mixed>> {
+  return await executeAsOneMutation(exeContext, parentType, sourceValue, path, fields);
+  /*
   return promiseReduce(
     Object.keys(fields),
     (results, responseName) => {
@@ -417,6 +419,50 @@ function executeFieldsSerially(
     },
     Object.create(null),
   );
+  */
+}
+
+
+/**
+ * In order to support transactions over an entire mutation, all operations must be collected
+ * prior to execution and passed to the database as a single request. This introduces additional
+ * overhead but allows the database to rollback to a consistent state for dependent operations.
+ * The default behaviour only allows transaction support for individual request within a mutation.
+ *
+ * Note: Even if a rollback is possible using other means (e.g., SQL's BEGIN TRANSACTION), results
+ * from ops that have been rollbacked may still be returned to the client in the default approach.
+ *
+ * @param exeContext
+ * @param parentType
+ * @param sourceValue
+ * @param path
+ * @param fields
+ * @returns {any}
+ */
+async function executeAsOneMutation(
+  exeContext: ExecutionContext,
+  parentType: GraphQLObjectType,
+  sourceValue: mixed,
+  path: Path | void,
+  fields: ObjMap<Array<FieldNode>>
+) {
+  // Iterate all mutation operations. The databse driver returns null for each op during this
+  // process.
+  for(let responseName in fields){
+    var fieldNodes = fields[responseName];
+    var fieldPath = (0, _Path.addPath)(path, responseName);
+    await resolveField(exeContext, parentType, sourceValue, fieldNodes, fieldPath);
+  }
+
+  // Repeats the step above but now the first op executes the transaction. Ops then return via the standard
+  // GraphQL pipeline and are collected in the results object as the value for each respective response name.
+  var results = Object.create(null);
+  for(let responseName in fields){
+    var fieldNodes = fields[responseName];
+    var fieldPath = (0, _Path.addPath)(path, responseName);
+    results[responseName] = await resolveField(exeContext, parentType, sourceValue, fieldNodes, fieldPath);
+  }
+  return results;
 }
 
 /**
@@ -1230,5 +1276,3 @@ export function getFieldDef(
   }
   return parentType.getFields()[fieldName];
 }
-
-function helloNpm(){}
