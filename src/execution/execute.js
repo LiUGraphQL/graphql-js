@@ -383,6 +383,15 @@ function executeOperation(
 /**
  * Implements the "Evaluating selection sets" section of the spec
  * for "write" mode.
+ *
+ *
+ * Modified by Robin Keskisärkkä:
+ * This function has been modified to enable support for transactions over an
+ * entire mutation request. The default behaviour only allows transaction support
+ * for individual fields within a mutation. The modified code instead passes a
+ * list of the response fields as part of the context value, which allows the
+ * backedn to keep track of the executed fields. Promises returned as results
+ * are resolved only once all fields have been processed.
  */
 function executeFieldsSerially(
   exeContext: ExecutionContext,
@@ -391,18 +400,29 @@ function executeFieldsSerially(
   path: Path | void,
   fields: ObjMap<Array<FieldNode>>,
 ): PromiseOrValue<ObjMap<mixed>> {
+  // add a list of expected response fields
+  exeContext.contextValue.responseFields = Object.keys(fields);
+
+  // collect results
+  const promisedResults = [];
+  for(let responseName in fields) {
+    const fieldNodes = fields[responseName];
+    const fieldPath = addPath(path, responseName);
+    const result = resolveField(
+      exeContext,
+      parentType,
+      sourceValue,
+      fieldNodes,
+      fieldPath,
+    );
+    promisedResults[responseName] = result;
+  }
+
+  // return results (resolve any promises)
   return promiseReduce(
     Object.keys(fields),
     (results, responseName) => {
-      const fieldNodes = fields[responseName];
-      const fieldPath = addPath(path, responseName);
-      const result = resolveField(
-        exeContext,
-        parentType,
-        sourceValue,
-        fieldNodes,
-        fieldPath,
-      );
+      const result = promisedResults[responseName];
       if (result === undefined) {
         return results;
       }
@@ -412,10 +432,10 @@ function executeFieldsSerially(
           return results;
         });
       }
-      results[responseName] = result;
+      results[responseName] = resolvedResult;
       return results;
     },
-    Object.create(null),
+    Object.create(null)
   );
 }
 
