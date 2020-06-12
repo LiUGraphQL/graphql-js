@@ -3,8 +3,6 @@
 npm install @babel/core @babel/node @babel/preset-env @babel/cli --save-dev
 npm run build
 
-exit 1
-
 # Exit immediately if any subcommand terminated
 trap "exit 1" ERR
 
