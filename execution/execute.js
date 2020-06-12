@@ -32,7 +32,7 @@ var _promiseReduce = _interopRequireDefault(require("../jsutils/promiseReduce"))
 
 var _promiseForObject = _interopRequireDefault(require("../jsutils/promiseForObject"));
 
-var _Path2 = require("../jsutils/Path");
+var _Path = require("../jsutils/Path");
 
 var _GraphQLError = require("../error/GraphQLError");
 
@@ -55,10 +55,6 @@ var _getOperationRootType = require("../utilities/getOperationRootType");
 var _values = require("./values");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
-
-function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
 function execute(argsOrSchema, document, rootValue, contextValue, variableValues, operationName, fieldResolver, typeResolver) {
   /* eslint-enable no-redeclare */
@@ -243,122 +239,55 @@ function executeOperation(exeContext, operation, rootValue) {
 /**
  * Implements the "Evaluating selection sets" section of the spec
  * for "write" mode.
+ *
+ *
+ * Modified by Robin Keskisärkkä:
+ * This function has been modified to enable support for transactions over an
+ * entire mutation request. The default behaviour only allows transaction support
+ * for individual fields within a mutation. The modified code instead passes a
+ * list of the response fields as part of the context value, which allows the
+ * backedn to keep track of the executed fields. Promises returned as results
+ * are resolved only once all fields have been processed.
  */
 
 
-function executeFieldsSerially(_x, _x2, _x3, _x4, _x5) {
-  return _executeFieldsSerially.apply(this, arguments);
-}
-/**
- * In order to support transactions over an entire mutation, all operations must be collected
- * prior to execution and passed to the database as a single request. This introduces additional
- * overhead but allows the database to rollback to a consistent state for dependent operations.
- * The default behaviour only allows transaction support for individual request within a mutation.
- *
- * Note: Even if a rollback is possible using other means (e.g., SQL's BEGIN TRANSACTION), results
- * from ops that have been rollbacked may still be returned to the client in the default approach.
- *
- * @param exeContext
- * @param parentType
- * @param sourceValue
- * @param path
- * @param fields
- * @returns {any}
- */
+function executeFieldsSerially(exeContext, parentType, sourceValue, path, fields) {
+  // add a list of expected response fields
+  exeContext.contextValue.responseFields = Object.keys(fields); // collect results
+
+  var promisedResults = [];
+
+  for (var responseName in fields) {
+    var fieldNodes = fields[responseName];
+    var fieldPath = (0, _Path.addPath)(path, responseName);
+    var result = resolveField(exeContext, parentType, sourceValue, fieldNodes, fieldPath);
+    promisedResults[responseName] = result;
+  } // return results (resolve any promises)
 
 
-function _executeFieldsSerially() {
-  _executeFieldsSerially = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(exeContext, parentType, sourceValue, path, fields) {
-    return regeneratorRuntime.wrap(function _callee$(_context) {
-      while (1) {
-        switch (_context.prev = _context.next) {
-          case 0:
-            _context.next = 2;
-            return executeAsOneMutation(exeContext, parentType, sourceValue, path, fields);
+  return (0, _promiseReduce.default)(Object.keys(fields), function (results, responseName) {
+    var result = promisedResults[responseName];
 
-          case 2:
-            return _context.abrupt("return", _context.sent);
+    if (result === undefined) {
+      return results;
+    }
 
-          case 3:
-          case "end":
-            return _context.stop();
-        }
-      }
-    }, _callee);
-  }));
-  return _executeFieldsSerially.apply(this, arguments);
-}
+    if ((0, _isPromise.default)(result)) {
+      return result.then(function (resolvedResult) {
+        results[responseName] = resolvedResult;
+        return results;
+      });
+    }
 
-function executeAsOneMutation(_x6, _x7, _x8, _x9, _x10) {
-  return _executeAsOneMutation.apply(this, arguments);
+    results[responseName] = resolvedResult;
+    return results;
+  }, Object.create(null));
 }
 /**
  * Implements the "Evaluating selection sets" section of the spec
  * for "read" mode.
  */
 
-
-function _executeAsOneMutation() {
-  _executeAsOneMutation = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(exeContext, parentType, sourceValue, path, fields) {
-    var responseName, fieldNodes, fieldPath, results, _responseName;
-
-    return regeneratorRuntime.wrap(function _callee2$(_context2) {
-      while (1) {
-        switch (_context2.prev = _context2.next) {
-          case 0:
-            _context2.t0 = regeneratorRuntime.keys(fields);
-
-          case 1:
-            if ((_context2.t1 = _context2.t0()).done) {
-              _context2.next = 9;
-              break;
-            }
-
-            responseName = _context2.t1.value;
-            fieldNodes = fields[responseName];
-            fieldPath = (0, _Path.addPath)(path, responseName);
-            _context2.next = 7;
-            return resolveField(exeContext, parentType, sourceValue, fieldNodes, fieldPath);
-
-          case 7:
-            _context2.next = 1;
-            break;
-
-          case 9:
-            // Repeats the step above but now the first op executes the transaction. Ops then return via the standard
-            // GraphQL pipeline and are collected in the results object as the value for each respective response name.
-            results = Object.create(null);
-            _context2.t2 = regeneratorRuntime.keys(fields);
-
-          case 11:
-            if ((_context2.t3 = _context2.t2()).done) {
-              _context2.next = 20;
-              break;
-            }
-
-            _responseName = _context2.t3.value;
-            fieldNodes = fields[_responseName];
-            fieldPath = (0, _Path.addPath)(path, _responseName);
-            _context2.next = 17;
-            return resolveField(exeContext, parentType, sourceValue, fieldNodes, fieldPath);
-
-          case 17:
-            results[_responseName] = _context2.sent;
-            _context2.next = 11;
-            break;
-
-          case 20:
-            return _context2.abrupt("return", results);
-
-          case 21:
-          case "end":
-            return _context2.stop();
-        }
-      }
-    }, _callee2);
-  }));
-  return _executeAsOneMutation.apply(this, arguments);
-}
 
 function executeFields(exeContext, parentType, sourceValue, path, fields) {
   var results = Object.create(null);
@@ -367,7 +296,7 @@ function executeFields(exeContext, parentType, sourceValue, path, fields) {
   for (var _i4 = 0, _Object$keys2 = Object.keys(fields); _i4 < _Object$keys2.length; _i4++) {
     var responseName = _Object$keys2[_i4];
     var fieldNodes = fields[responseName];
-    var fieldPath = (0, _Path2.addPath)(path, responseName);
+    var fieldPath = (0, _Path.addPath)(path, responseName);
     var result = resolveField(exeContext, parentType, sourceValue, fieldNodes, fieldPath);
 
     if (result !== undefined) {
@@ -619,7 +548,7 @@ function completeValueCatchingError(exeContext, returnType, fieldNodes, info, pa
 }
 
 function handleFieldError(rawError, fieldNodes, path, returnType, exeContext) {
-  var error = (0, _locatedError.locatedError)(asErrorInstance(rawError), fieldNodes, (0, _Path2.pathToArray)(path)); // If the field type is non-nullable, then it is resolved without any
+  var error = (0, _locatedError.locatedError)(asErrorInstance(rawError), fieldNodes, (0, _Path.pathToArray)(path)); // If the field type is non-nullable, then it is resolved without any
   // protection from errors, however it still properly locates the error.
 
   if ((0, _definition.isNonNullType)(returnType)) {
@@ -721,7 +650,7 @@ function completeListValue(exeContext, returnType, fieldNodes, info, path, resul
   var completedResults = (0, _arrayFrom.default)(result, function (item, index) {
     // No need to modify the info object containing the path,
     // since from here on it is not ever accessed by resolver functions.
-    var fieldPath = (0, _Path2.addPath)(path, index);
+    var fieldPath = (0, _Path.addPath)(path, index);
     var completedItem = completeValueCatchingError(exeContext, itemType, fieldNodes, info, fieldPath, item);
 
     if (!containsPromise && (0, _isPromise.default)(completedItem)) {

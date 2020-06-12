@@ -383,28 +383,46 @@ function executeOperation(
 /**
  * Implements the "Evaluating selection sets" section of the spec
  * for "write" mode.
+ *
+ *
+ * Modified by Robin Keskisärkkä:
+ * This function has been modified to enable support for transactions over an
+ * entire mutation request. The default behaviour only allows transaction support
+ * for individual fields within a mutation. The modified code instead passes a
+ * list of the response fields as part of the context value, which allows the
+ * backedn to keep track of the executed fields. Promises returned as results
+ * are resolved only once all fields have been processed.
  */
-async function executeFieldsSerially(
+function executeFieldsSerially(
   exeContext: ExecutionContext,
   parentType: GraphQLObjectType,
   sourceValue: mixed,
   path: Path | void,
   fields: ObjMap<Array<FieldNode>>,
 ): PromiseOrValue<ObjMap<mixed>> {
-  return await executeAsOneMutation(exeContext, parentType, sourceValue, path, fields);
-  /*
+  // add a list of expected response fields
+  exeContext.contextValue.responseFields = Object.keys(fields);
+
+  // collect results
+  const promisedResults = [];
+  for(let responseName in fields) {
+    const fieldNodes = fields[responseName];
+    const fieldPath = addPath(path, responseName);
+    const result = resolveField(
+      exeContext,
+      parentType,
+      sourceValue,
+      fieldNodes,
+      fieldPath,
+    );
+    promisedResults[responseName] = result;
+  }
+
+  // return results (resolve any promises)
   return promiseReduce(
     Object.keys(fields),
     (results, responseName) => {
-      const fieldNodes = fields[responseName];
-      const fieldPath = addPath(path, responseName);
-      const result = resolveField(
-        exeContext,
-        parentType,
-        sourceValue,
-        fieldNodes,
-        fieldPath,
-      );
+      const result = promisedResults[responseName];
       if (result === undefined) {
         return results;
       }
@@ -414,55 +432,11 @@ async function executeFieldsSerially(
           return results;
         });
       }
-      results[responseName] = result;
+      results[responseName] = resolvedResult;
       return results;
     },
-    Object.create(null),
+    Object.create(null)
   );
-  */
-}
-
-
-/**
- * In order to support transactions over an entire mutation, all operations must be collected
- * prior to execution and passed to the database as a single request. This introduces additional
- * overhead but allows the database to rollback to a consistent state for dependent operations.
- * The default behaviour only allows transaction support for individual request within a mutation.
- *
- * Note: Even if a rollback is possible using other means (e.g., SQL's BEGIN TRANSACTION), results
- * from ops that have been rollbacked may still be returned to the client in the default approach.
- *
- * @param exeContext
- * @param parentType
- * @param sourceValue
- * @param path
- * @param fields
- * @returns {any}
- */
-async function executeAsOneMutation(
-  exeContext: ExecutionContext,
-  parentType: GraphQLObjectType,
-  sourceValue: mixed,
-  path: Path | void,
-  fields: ObjMap<Array<FieldNode>>
-) {
-  // Iterate all mutation operations. The databse driver returns null for each op during this
-  // process.
-  for(let responseName in fields){
-    var fieldNodes = fields[responseName];
-    var fieldPath = (0, _Path.addPath)(path, responseName);
-    await resolveField(exeContext, parentType, sourceValue, fieldNodes, fieldPath);
-  }
-
-  // Repeats the step above but now the first op executes the transaction. Ops then return via the standard
-  // GraphQL pipeline and are collected in the results object as the value for each respective response name.
-  var results = Object.create(null);
-  for(let responseName in fields){
-    var fieldNodes = fields[responseName];
-    var fieldPath = (0, _Path.addPath)(path, responseName);
-    results[responseName] = await resolveField(exeContext, parentType, sourceValue, fieldNodes, fieldPath);
-  }
-  return results;
 }
 
 /**
