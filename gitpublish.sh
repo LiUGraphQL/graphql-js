@@ -3,12 +3,10 @@
 npm install @babel/core @babel/node @babel/preset-env @babel/cli --save-dev
 npm run build
 
-exit 1
-
 # Exit immediately if any subcommand terminated
 trap "exit 1" ERR
 
-# This script is used to maintain a git branch which mirrors master in a form that
+# This script is used to maintain a git branch which mirrors the woosh-branch in a form that
 # allows npm dependencies to use:
 #
 #     "graphql": "git://github.com/LiUGraphQL/graphql-js.git#npm"
