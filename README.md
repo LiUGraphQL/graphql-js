@@ -1,169 +1,24 @@
-# GraphQL.js
+See the original graphql-js README in the offical repo: https://github.com/graphql/graphql-js
 
-The JavaScript reference implementation for GraphQL, a query language for APIs created by Facebook.
+# woo.sh fork of GraphQL.js
 
-[![npm version](https://badge.fury.io/js/graphql.svg)](https://badge.fury.io/js/graphql)
-[![Build Status](https://github.com/graphql/graphql-js/workflows/CI/badge.svg?branch=master)](https://github.com/graphql/graphql-js/actions?query=branch%3Amaster)
-[![Coverage Status](https://codecov.io/gh/graphql/graphql-js/branch/master/graph/badge.svg)](https://codecov.io/gh/graphql/graphql-js)
+This is a fork of the JavaScript reference implementation for GraphQL. The woosh [branch](https://github.com/LiUGraphQL/graphql-js/tree/woosh) contains a modified version of the library, where the `executeFieldsSerially` function in `execute.js` has been modified to enable support for transactions over an entire mutation request. The default behaviour only allows transaction support for individual fields within a mutation, which are then executed asynchronsously. The modified library passes a list of the mutation fields as part of the shared `context` object, which allows the GraphQL server to keep track of the mutation fields that are still pending processing. Promises are resolved only after all fields have been processed in sequence.
 
-See more complete documentation at https://graphql.org/ and
-https://graphql.org/graphql-js/.
+The field `exeContext.contextValue.responseFields` (accessed from the GraphQL `context` object) contains an array of pending mutation fields, which can be used as a trigger for executing a transaction. For implementations ignoring this field the library behaves exactly as the reference implementation.
 
-Looking for help? Find resources [from the community](https://graphql.org/community/).
-
-## Getting Started
-
-An overview of GraphQL in general is available in the
-[README](https://github.com/graphql/graphql-spec/blob/master/README.md) for the
-[Specification for GraphQL](https://github.com/graphql/graphql-spec). That overview
-describes a simple set of GraphQL examples that exist as [tests](src/__tests__)
-in this repository. A good way to get started with this repository is to walk
-through that README and the corresponding tests in parallel.
-
-### Using GraphQL.js
-
-Install GraphQL.js from npm
-
-With npm:
-
-```sh
-npm install --save graphql
+# Usage
+The [npm branch](https://github.com/LiUGraphQL/graphql-js/tree/npm) of this repository is manually maintained to be used as an npm dependency. You may install the library from the command line using:
+```bash
+npm install graphql@git://github.com/LiUGraphQL/graphql-js.git#npm
 ```
 
-or alternatively using yarn:
+or simply reference it as a dependency in your `packages.json` file:
+```json
+"dependencies": {
+  "graphql": "LiUGraphQL/graphql-js.git#npm",
+ }
+ ```
 
-```sh
-yarn add graphql
-```
+# Developers
+To publish new changes to the you need to publish the updated library by running the `gitpublish.sh` script. This will build and push the library to the [npm branch](https://github.com/LiUGraphQL/graphql-js/tree/npm).
 
-GraphQL.js provides two important capabilities: building a type schema, and
-serving queries against that type schema.
-
-First, build a GraphQL type schema which maps to your code base.
-
-```js
-import {
-  graphql,
-  GraphQLSchema,
-  GraphQLObjectType,
-  GraphQLString,
-} from 'graphql';
-
-var schema = new GraphQLSchema({
-  query: new GraphQLObjectType({
-    name: 'RootQueryType',
-    fields: {
-      hello: {
-        type: GraphQLString,
-        resolve() {
-          return 'world';
-        },
-      },
-    },
-  }),
-});
-```
-
-This defines a simple schema with one type and one field, that resolves
-to a fixed value. The `resolve` function can return a value, a promise,
-or an array of promises. A more complex example is included in the top
-level [tests](src/__tests__) directory.
-
-Then, serve the result of a query against that type schema.
-
-```js
-var query = '{ hello }';
-
-graphql(schema, query).then((result) => {
-  // Prints
-  // {
-  //   data: { hello: "world" }
-  // }
-  console.log(result);
-});
-```
-
-This runs a query fetching the one field defined. The `graphql` function will
-first ensure the query is syntactically and semantically valid before executing
-it, reporting errors otherwise.
-
-```js
-var query = '{ BoyHowdy }';
-
-graphql(schema, query).then((result) => {
-  // Prints
-  // {
-  //   errors: [
-  //     { message: 'Cannot query field BoyHowdy on RootQueryType',
-  //       locations: [ { line: 1, column: 3 } ] }
-  //   ]
-  // }
-  console.log(result);
-});
-```
-
-**Note**: Please don't forget to set `NODE_ENV=production` if you are running a production server it will disable some checks that can be useful during development but will significantly improve performance.
-
-### Want to ride the bleeding edge?
-
-The `npm` branch in this repository is automatically maintained to be the last
-commit to `master` to pass all tests, in the same form found on npm. It is
-recommended to use builds deployed to npm for many reasons, but if you want to use
-the latest not-yet-released version of graphql-js, you can do so by depending
-directly on this branch:
-
-```
-npm install graphql@git://github.com/graphql/graphql-js.git#npm
-```
-
-### Using in a Browser
-
-GraphQL.js is a general purpose library and can be used both in a Node server
-and in the browser. As an example, the [GraphiQL](https://github.com/graphql/graphiql/)
-tool is built with GraphQL.js!
-
-Building a project using GraphQL.js with [webpack](https://webpack.js.org) or
-[rollup](https://github.com/rollup/rollup) should just work and only include
-the portions of the library you use. This works because GraphQL.js is distributed
-with both CommonJS (`require()`) and ESModule (`import`) files. Ensure that any
-custom build configurations look for `.mjs` files!
-
-### Contributing
-
-We actively welcome pull requests, learn how to
-[contribute](https://github.com/graphql/graphql-js/blob/master/.github/CONTRIBUTING.md).
-
-### Changelog
-
-Changes are tracked as [GitHub releases](https://github.com/graphql/graphql-js/releases).
-
-### License
-
-GraphQL.js is [MIT-licensed](https://github.com/graphql/graphql-js/blob/master/LICENSE).
-
-### Credits
-
-The `*.d.ts` files in this project are based on [DefinitelyTyped](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/54712a7e28090c5b1253b746d1878003c954f3ff/types/graphql) definitions written by:
-
-<!--- spell-checker:disable -->
-
-- TonyYang https://github.com/TonyPythoneer
-- Caleb Meredith https://github.com/calebmer
-- Dominic Watson https://github.com/intellix
-- Firede https://github.com/firede
-- Kepennar https://github.com/kepennar
-- Mikhail Novikov https://github.com/freiksenet
-- Ivan Goncharov https://github.com/IvanGoncharov
-- Hagai Cohen https://github.com/DxCx
-- Ricardo Portugal https://github.com/rportugal
-- Tim Griesser https://github.com/tgriesser
-- Dylan Stewart https://github.com/dyst5422
-- Alessio Dionisi https://github.com/adnsio
-- Divyendu Singh https://github.com/divyenduz
-- Brad Zacher https://github.com/bradzacher
-- Curtis Layne https://github.com/clayne11
-- Jonathan Cardoso https://github.com/JCMais
-- Pavel Lang https://github.com/langpavel
-- Mark Caudill https://github.com/mc0
-- Martijn Walraven https://github.com/martijnwalraven
-- Jed Mao https://github.com/jedmao
