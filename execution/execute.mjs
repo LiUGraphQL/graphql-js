@@ -261,14 +261,14 @@ function addExportDirectives(operation, rawVariableValues) {
       delete exports[v];
 
       if (rawVariableValues !== null && rawVariableValues[v] !== undefined) {
-        errors.push(new _GraphQLError.GraphQLError("Exported variable \"".concat(v, "\" has already been asssigned a value")));
+        errors.push(new GraphQLError("Exported variable \"".concat(v, "\" has already been asssigned a value")));
       }
     }
   }
 
   if (!isEmpty(exports)) {
     for (var _v in exports) {
-      errors.push(new _GraphQLError.GraphQLError("Export used for undeclared variable \"".concat(_v, "\"")));
+      errors.push(new GraphQLError("Export used for undeclared variable \"".concat(_v, "\"")));
     }
   }
 
@@ -307,7 +307,7 @@ function getExports(selections, errors) {
           var v = directive.arguments[0].value.value;
 
           if (exports[v] !== undefined) {
-            errors.push(new _GraphQLError.GraphQLError("Exported variable \"".concat(v, "\" has already been asssigned a value")));
+            errors.push(new GraphQLError("Exported variable \"".concat(v, "\" has already been asssigned a value")));
           }
 
           exports[v] = directive;

@@ -34,7 +34,7 @@ var _promiseForObject = _interopRequireDefault(require("../jsutils/promiseForObj
 
 var _Path = require("../jsutils/Path");
 
-var _GraphQLError2 = require("../error/GraphQLError");
+var _GraphQLError = require("../error/GraphQLError");
 
 var _locatedError = require("../error/locatedError");
 
@@ -164,7 +164,7 @@ function buildExecutionContext(schema, document, rootValue, contextValue, rawVar
       case _kinds.Kind.OPERATION_DEFINITION:
         if (operationName == null) {
           if (operation !== undefined) {
-            return [new _GraphQLError2.GraphQLError('Must provide operation name if query contains multiple operations.')];
+            return [new _GraphQLError.GraphQLError('Must provide operation name if query contains multiple operations.')];
           }
 
           operation = definition;
@@ -182,10 +182,10 @@ function buildExecutionContext(schema, document, rootValue, contextValue, rawVar
 
   if (!operation) {
     if (operationName != null) {
-      return [new _GraphQLError2.GraphQLError("Unknown operation named \"".concat(operationName, "\"."))];
+      return [new _GraphQLError.GraphQLError("Unknown operation named \"".concat(operationName, "\"."))];
     }
 
-    return [new _GraphQLError2.GraphQLError('Must provide an operation.')];
+    return [new _GraphQLError.GraphQLError('Must provide an operation.')];
   } // add the export directive to exported variables
 
 
@@ -736,7 +736,7 @@ function completeValue(exeContext, returnType, fieldNodes, info, path, result) {
 
 function completeListValue(exeContext, returnType, fieldNodes, info, path, result) {
   if (!(0, _isCollection.default)(result)) {
-    throw new _GraphQLError2.GraphQLError("Expected Iterable, but did not find one for field \"".concat(info.parentType.name, ".").concat(info.fieldName, "\"."));
+    throw new _GraphQLError.GraphQLError("Expected Iterable, but did not find one for field \"".concat(info.parentType.name, ".").concat(info.fieldName, "\"."));
   } // This is specified as a simple map, however we're optimizing the path
   // where the list contains no Promises by avoiding creating another Promise.
 
@@ -798,11 +798,11 @@ function ensureValidRuntimeType(runtimeTypeOrName, exeContext, returnType, field
   var runtimeType = typeof runtimeTypeOrName === 'string' ? exeContext.schema.getType(runtimeTypeOrName) : runtimeTypeOrName;
 
   if (!(0, _definition.isObjectType)(runtimeType)) {
-    throw new _GraphQLError2.GraphQLError("Abstract type \"".concat(returnType.name, "\" must resolve to an Object type at runtime for field \"").concat(info.parentType.name, ".").concat(info.fieldName, "\" with ") + "value ".concat((0, _inspect.default)(result), ", received \"").concat((0, _inspect.default)(runtimeType), "\". ") + "Either the \"".concat(returnType.name, "\" type should provide a \"resolveType\" function or each possible type should provide an \"isTypeOf\" function."), fieldNodes);
+    throw new _GraphQLError.GraphQLError("Abstract type \"".concat(returnType.name, "\" must resolve to an Object type at runtime for field \"").concat(info.parentType.name, ".").concat(info.fieldName, "\" with ") + "value ".concat((0, _inspect.default)(result), ", received \"").concat((0, _inspect.default)(runtimeType), "\". ") + "Either the \"".concat(returnType.name, "\" type should provide a \"resolveType\" function or each possible type should provide an \"isTypeOf\" function."), fieldNodes);
   }
 
   if (!exeContext.schema.isSubType(returnType, runtimeType)) {
-    throw new _GraphQLError2.GraphQLError("Runtime Object type \"".concat(runtimeType.name, "\" is not a possible type for \"").concat(returnType.name, "\"."), fieldNodes);
+    throw new _GraphQLError.GraphQLError("Runtime Object type \"".concat(runtimeType.name, "\" is not a possible type for \"").concat(returnType.name, "\"."), fieldNodes);
   }
 
   return runtimeType;
@@ -838,7 +838,7 @@ function completeObjectValue(exeContext, returnType, fieldNodes, info, path, res
 }
 
 function invalidReturnTypeError(returnType, result, fieldNodes) {
-  return new _GraphQLError2.GraphQLError("Expected value of type \"".concat(returnType.name, "\" but got: ").concat((0, _inspect.default)(result), "."), fieldNodes);
+  return new _GraphQLError.GraphQLError("Expected value of type \"".concat(returnType.name, "\" but got: ").concat((0, _inspect.default)(result), "."), fieldNodes);
 }
 
 function collectAndExecuteSubfields(exeContext, returnType, fieldNodes, path, result) {
