@@ -77,6 +77,12 @@ export function getVariableValues(
   return { errors };
 }
 
+
+/**
+ * Modified by Robin Keskisärkkä:
+ * Variables associated with the 'export' directive are not validated here.
+ * Throws an exception if an exported variable is provided as a variable value.
+ */
 function coerceVariableValues(
   schema: GraphQLSchema,
   varDefNodes: $ReadOnlyArray<VariableDefinitionNode>,
@@ -87,6 +93,14 @@ function coerceVariableValues(
   for (const varDefNode of varDefNodes) {
     const varName = varDefNode.variable.name.value;
     const varType = typeFromAST(schema, varDefNode.type);
+
+    // Return if variable has been exported
+    for(const directive of varDefNode.directives){
+      if(directive.name.value === 'export'){
+        continue;
+      }
+    }
+
     if (!isInputType(varType)) {
       // Must use input types for variables. This should be caught during
       // validation, however is checked again here for safety.
