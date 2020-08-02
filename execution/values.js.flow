@@ -94,11 +94,15 @@ function coerceVariableValues(
     const varName = varDefNode.variable.name.value;
     const varType = typeFromAST(schema, varDefNode.type);
 
-    // Return if variable has been exported
+    // Return if variable is bound to the 'export' directive
+    let skip = false;
     for(const directive of varDefNode.directives){
       if(directive.name.value === 'export'){
-        continue;
+        skip = true;
       }
+    }
+    if(skip) {
+      continue;
     }
 
     if (!isInputType(varType)) {

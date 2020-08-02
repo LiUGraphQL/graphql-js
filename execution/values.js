@@ -81,14 +81,20 @@ function coerceVariableValues(schema, varDefNodes, inputs, onError) {
   var _loop = function _loop(_i2) {
     var varDefNode = varDefNodes[_i2];
     var varName = varDefNode.variable.name.value;
-    var varType = (0, _typeFromAST.typeFromAST)(schema, varDefNode.type); // Return if variable has been exported
+    var varType = (0, _typeFromAST.typeFromAST)(schema, varDefNode.type); // Return if variable is bound to the 'export' directive
+
+    var skip = false;
 
     for (var _i4 = 0, _varDefNode$directive2 = varDefNode.directives; _i4 < _varDefNode$directive2.length; _i4++) {
       var directive = _varDefNode$directive2[_i4];
 
       if (directive.name.value === 'export') {
-        continue;
+        skip = true;
       }
+    }
+
+    if (skip) {
+      return "continue";
     }
 
     if (!(0, _definition.isInputType)(varType)) {
