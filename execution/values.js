@@ -68,6 +68,12 @@ function getVariableValues(schema, varDefNodes, inputs, options) {
     errors: errors
   };
 }
+/**
+ * Modified by Robin Keskisärkkä:
+ * Variables associated with the 'export' directive are not validated here.
+ * Throws an exception if an exported variable is provided as a variable value.
+ */
+
 
 function coerceVariableValues(schema, varDefNodes, inputs, onError) {
   var coercedValues = {};
@@ -75,7 +81,21 @@ function coerceVariableValues(schema, varDefNodes, inputs, onError) {
   var _loop = function _loop(_i2) {
     var varDefNode = varDefNodes[_i2];
     var varName = varDefNode.variable.name.value;
-    var varType = (0, _typeFromAST.typeFromAST)(schema, varDefNode.type);
+    var varType = (0, _typeFromAST.typeFromAST)(schema, varDefNode.type); // Return if variable is bound to the 'export' directive
+
+    var skip = false;
+
+    for (var _i4 = 0, _varDefNode$directive2 = varDefNode.directives; _i4 < _varDefNode$directive2.length; _i4++) {
+      var directive = _varDefNode$directive2[_i4];
+
+      if (directive.name.value === 'export') {
+        skip = true;
+      }
+    }
+
+    if (skip) {
+      return "continue";
+    }
 
     if (!(0, _definition.isInputType)(varType)) {
       // Must use input types for variables. This should be caught during
@@ -147,8 +167,8 @@ function getArgumentValues(def, node, variableValues) {
     return arg.name.value;
   });
 
-  for (var _i4 = 0, _def$args2 = def.args; _i4 < _def$args2.length; _i4++) {
-    var argDef = _def$args2[_i4];
+  for (var _i6 = 0, _def$args2 = def.args; _i6 < _def$args2.length; _i6++) {
+    var argDef = _def$args2[_i6];
     var name = argDef.name;
     var argType = argDef.type;
     var argumentNode = argNodeMap[name];

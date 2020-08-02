@@ -268,6 +268,10 @@ export function assertValidExecutionArguments(
  *
  * Throws a GraphQLError if a valid execution context cannot be created.
  *
+ * Modified by Robin Keskisärkkä:
+ * The @export directive is now added to the variable definition of all
+ * variables exported inside an operation.
+ *
  * @internal
  */
 export function buildExecutionContext(
@@ -310,6 +314,10 @@ export function buildExecutionContext(
     }
     return [new GraphQLError('Must provide an operation.')];
   }
+
+  // add the export directive to exported variables
+  let exportErrors = addExportDirectives(operation, rawVariableValues);
+  if(exportErrors.length > 0) return exportErrors;
 
   // istanbul ignore next (See: 'https://github.com/graphql/graphql-js/issues/2203')
   const variableDefinitions = operation.variableDefinitions ?? [];
@@ -378,6 +386,80 @@ function executeOperation(
     exeContext.errors.push(error);
     return null;
   }
+}
+
+/**
+ * Add the @export directive to all variables exported in a operation.
+ * The function generates errors if:
+ * - the same variable is exported more than once
+ * - an undeclared variable is exported
+ * - an exported variable has already been assigned a value
+ *
+ * Author: Robin Keskisärkkä
+ *
+ * @param operation
+ * @param rawVariableValues
+ * @returns {Array}
+ */
+function addExportDirectives(operation, rawVariableValues){
+  let errors = [];
+  let selections = operation.selectionSet.selections;
+  let variableDefinitions = operation.variableDefinitions;
+
+  let exports = getExports(selections, errors);
+  for(let varDef of variableDefinitions){
+    let v = varDef.variable.name.value;
+    if(exports[v] !== undefined){
+      varDef.directives.push(exports[v]);
+      delete exports[v];
+      if(rawVariableValues !== null && rawVariableValues[v] !== undefined){
+        errors.push(new GraphQLError(`Exported variable "${v}" has already been asssigned a value`));
+      }
+    }
+  }
+
+  if(!isEmpty(exports)){
+    for(let v in exports){
+      errors.push(new GraphQLError(`Export used for undeclared variable "${v}"`));
+    }
+  }
+
+  return errors;
+}
+
+function isEmpty(ob) {
+  for (let x in ob) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Get all variables exported within an array of selections.
+ *
+ * Author: Robin Keskisärkkä
+ *
+ * @param selections
+ * @param errors
+ * @param exports
+ */
+function getExports(selections, errors, exports={}){
+  for(let selection of selections){
+    if(selection.selectionSet === undefined){
+      for(let directive of selection.directives){
+        if(directive.name.value === 'export'){
+          let v = directive.arguments[0].value.value;
+          if(exports[v] !== undefined){
+            errors.push(new GraphQLError(`Exported variable "${v}" has already been asssigned a value`));
+          }
+          exports[v] = directive;
+        }
+      }
+    } else {
+      getExports(selection.selectionSet.selections, errors, exports);
+    }
+  }
+  return exports;
 }
 
 /**
