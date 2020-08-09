@@ -99,6 +99,8 @@ function coerceVariableValues(
     for(const directive of varDefNode.directives){
       if(directive.name.value === 'export'){
         skip = true;
+        coercedValues[varName] = null;
+        break;
       }
     }
     if(skip) {

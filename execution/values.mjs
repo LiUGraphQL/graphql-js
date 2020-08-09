@@ -68,6 +68,8 @@ function coerceVariableValues(schema, varDefNodes, inputs, onError) {
 
       if (directive.name.value === 'export') {
         skip = true;
+        coercedValues[varName] = null;
+        break;
       }
     }
 
