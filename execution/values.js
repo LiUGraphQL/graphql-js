@@ -89,6 +89,10 @@ function coerceVariableValues(schema, varDefNodes, inputs, onError) {
       var directive = _varDefNode$directive2[_i4];
 
       if (directive.name.value === 'export') {
+        if (hasOwnProperty(inputs, varName)) {
+          onError(new _GraphQLError.GraphQLError("Exported variable \"$".concat(varName, "\" cannot be defined by input."), varDefNode.type));
+        }
+
         skip = true;
         coercedValues[varName] = null;
         break;
