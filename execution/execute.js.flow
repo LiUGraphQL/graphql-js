@@ -402,7 +402,7 @@ function addExportDirectives(operation, rawVariableValues){
   const selections = operation.selectionSet.selections;
   const variableDefinitions = operation.variableDefinitions;
 
-  const exportedVariables = getExportedVariables(selections, errors);
+  const exportedVariables = getExportedVariablesAndFields(selections, errors);
 
   for(const varDef of variableDefinitions){
     const v = varDef.variable.name.value;
@@ -450,15 +450,16 @@ function isEmpty(ob) {
 function getExportedVariablesAndFields(selections, errors, level=0, exports={}){
   for(const selection of selections){
     if(selection.selectionSet === undefined){
-      // no exports from nested fields
-      if(level > 1){
-        errors.push(new GraphQLError(`Variable "${v}" cannot be exported from a nested field`));
-        return exports;
-      }
-      
       for(const directive of selection.directives){
         if(directive.name.value === 'export'){
           const v = directive.arguments[0].value.value;
+
+          // don't allow exports from nested fields
+          if(level > 1){
+            errors.push(new GraphQLError(`Variable "${v}" cannot be exported from a nested field`));
+            return exports;
+          }
+
           if(exports[v] !== undefined){
             errors.push(new GraphQLError(`Exported variable "${v}" can only be exported once`));
           }
@@ -466,7 +467,7 @@ function getExportedVariablesAndFields(selections, errors, level=0, exports={}){
         }
       }
     } else {
-      getExportedVariables(selection.selectionSet.selections, errors, level+1, exports);
+      getExportedVariablesAndFields(selection.selectionSet.selections, errors, level+1, exports);
     }
   }
   return exports;

@@ -258,33 +258,33 @@ function addExportDirectives(operation, rawVariableValues) {
   var errors = [];
   var selections = operation.selectionSet.selections;
   var variableDefinitions = operation.variableDefinitions;
-  var exportedVariables = getExportedVariables(selections, errors);
+  var exportedVariables = getExportedVariablesAndFields(selections, errors);
 
   for (var _i4 = 0; _i4 < variableDefinitions.length; _i4++) {
     var varDef = variableDefinitions[_i4];
-    var _v = varDef.variable.name.value;
+    var v = varDef.variable.name.value;
 
-    if (exports[_v] !== undefined) {
-      if (!isScalarType(_v)) {
-        errors.push(new _GraphQLError.GraphQLError("Exported variable \"".concat(_v, "\" is not a scalar type")));
+    if (exports[v] !== undefined) {
+      if (!isScalarType(v)) {
+        errors.push(new _GraphQLError.GraphQLError("Exported variable \"".concat(v, "\" is not a scalar type")));
       }
 
-      if (!isScalarType(_v)) {
-        errors.push(new _GraphQLError.GraphQLError("Exported variable \"".concat(_v, "\" is not a scalar type")));
+      if (!isScalarType(v)) {
+        errors.push(new _GraphQLError.GraphQLError("Exported variable \"".concat(v, "\" is not a scalar type")));
       }
 
-      varDef.directives.push(exports[_v]);
-      delete exports[_v];
+      varDef.directives.push(exports[v]);
+      delete exports[v];
 
-      if (rawVariableValues !== null && rawVariableValues[_v] !== undefined) {
-        errors.push(new _GraphQLError.GraphQLError("Exported variable \"".concat(_v, "\" has already been asssigned a value")));
+      if (rawVariableValues !== null && rawVariableValues[v] !== undefined) {
+        errors.push(new _GraphQLError.GraphQLError("Exported variable \"".concat(v, "\" has already been asssigned a value")));
       }
     }
   }
 
   if (!isEmpty(exports)) {
-    for (var _v2 in exports) {
-      errors.push(new _GraphQLError.GraphQLError("@export directive used for undeclared variable \"".concat(_v2, "\"")));
+    for (var _v in exports) {
+      errors.push(new _GraphQLError.GraphQLError("@export directive used for undeclared variable \"".concat(_v, "\"")));
     }
   }
 
@@ -318,27 +318,26 @@ function getExportedVariablesAndFields(selections, errors) {
     var selection = selections[_i6];
 
     if (selection.selectionSet === undefined) {
-      // no exports from nested fields
-      if (level > 1) {
-        errors.push(new _GraphQLError.GraphQLError("Variable \"".concat(v, "\" cannot be exported from a nested field")));
-        return exports;
-      }
-
       for (var _i8 = 0, _selection$directives2 = selection.directives; _i8 < _selection$directives2.length; _i8++) {
         var directive = _selection$directives2[_i8];
 
         if (directive.name.value === 'export') {
-          var _v3 = directive.arguments[0].value.value;
+          var v = directive.arguments[0].value.value; // don't allow exports from nested fields
 
-          if (exports[_v3] !== undefined) {
-            errors.push(new _GraphQLError.GraphQLError("Exported variable \"".concat(_v3, "\" can only be exported once")));
+          if (level > 1) {
+            errors.push(new _GraphQLError.GraphQLError("Variable \"".concat(v, "\" cannot be exported from a nested field")));
+            return exports;
           }
 
-          exports[_v3] = [selection, directive];
+          if (exports[v] !== undefined) {
+            errors.push(new _GraphQLError.GraphQLError("Exported variable \"".concat(v, "\" can only be exported once")));
+          }
+
+          exports[v] = [selection, directive];
         }
       }
     } else {
-      getExportedVariables(selection.selectionSet.selections, errors, level + 1, exports);
+      getExportedVariablesAndFields(selection.selectionSet.selections, errors, level + 1, exports);
     }
   }
 
