@@ -232,11 +232,7 @@ function executeOperation(exeContext, operation, rootValue) {
   }
 }
 /**
- * Add the @export directive to all variables exported in a operation.
- * The function generates errors if:
- * - the same variable is exported more than once
- * - an undeclared variable is exported
- * - an exported variable has already been assigned a value
+ * Add the @export directive to all variables that are exported in an operation.
  *
  * Author: Robin Keskisärkkä
  *
@@ -249,8 +245,9 @@ function executeOperation(exeContext, operation, rootValue) {
 function addExportDirectives(operation, rawVariableValues) {
   var errors = [];
   var selections = operation.selectionSet.selections;
+  console.log(JSON.stringify(selections, null, 2));
   var variableDefinitions = operation.variableDefinitions;
-  var exports = getExports(selections, errors);
+  var exportedVariables = getExportedVariables(selections, errors);
 
   for (var _i4 = 0; _i4 < variableDefinitions.length; _i4++) {
     var varDef = variableDefinitions[_i4];
@@ -268,7 +265,7 @@ function addExportDirectives(operation, rawVariableValues) {
 
   if (!isEmpty(exports)) {
     for (var _v in exports) {
-      errors.push(new GraphQLError("Export used for undeclared variable \"".concat(_v, "\"")));
+      errors.push(new GraphQLError("@export directive used for undeclared variable \"".concat(_v, "\"")));
     }
   }
 
@@ -283,7 +280,7 @@ function isEmpty(ob) {
   return true;
 }
 /**
- * Get all variables exported within an array of selections.
+ * Recursively get all references to exported variables within selections.
  *
  * Author: Robin Keskisärkkä
  *
@@ -293,7 +290,7 @@ function isEmpty(ob) {
  */
 
 
-function getExports(selections, errors) {
+function getExportedVariables(selections, errors) {
   var exports = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
   for (var _i6 = 0; _i6 < selections.length; _i6++) {

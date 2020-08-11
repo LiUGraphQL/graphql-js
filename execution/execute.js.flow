@@ -389,11 +389,7 @@ function executeOperation(
 }
 
 /**
- * Add the @export directive to all variables exported in a operation.
- * The function generates errors if:
- * - the same variable is exported more than once
- * - an undeclared variable is exported
- * - an exported variable has already been assigned a value
+ * Add the @export directive to all variables that are exported in an operation.
  *
  * Author: Robin Keskisärkkä
  *
@@ -402,12 +398,14 @@ function executeOperation(
  * @returns {Array}
  */
 function addExportDirectives(operation, rawVariableValues){
-  let errors = [];
-  let selections = operation.selectionSet.selections;
-  let variableDefinitions = operation.variableDefinitions;
+  const errors = [];
+  const selections = operation.selectionSet.selections;
+  console.log(JSON.stringify(selections, null, 2));
+  const variableDefinitions = operation.variableDefinitions;
 
-  let exports = getExports(selections, errors);
-  for(let varDef of variableDefinitions){
+  let exportedVariables = getExportedVariables(selections, errors);
+
+  for(const varDef of variableDefinitions){
     let v = varDef.variable.name.value;
     if(exports[v] !== undefined){
       varDef.directives.push(exports[v]);
@@ -419,8 +417,8 @@ function addExportDirectives(operation, rawVariableValues){
   }
 
   if(!isEmpty(exports)){
-    for(let v in exports){
-      errors.push(new GraphQLError(`Export used for undeclared variable "${v}"`));
+    for(const v in exports){
+      errors.push(new GraphQLError(`@export directive used for undeclared variable "${v}"`));
     }
   }
 
@@ -435,7 +433,7 @@ function isEmpty(ob) {
 }
 
 /**
- * Get all variables exported within an array of selections.
+ * Recursively get all references to exported variables within selections.
  *
  * Author: Robin Keskisärkkä
  *
@@ -443,7 +441,7 @@ function isEmpty(ob) {
  * @param errors
  * @param exports
  */
-function getExports(selections, errors, exports={}){
+function getExportedVariables(selections, errors, exports={}){
   for(let selection of selections){
     if(selection.selectionSet === undefined){
       for(let directive of selection.directives){
