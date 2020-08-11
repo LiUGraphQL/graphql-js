@@ -400,14 +400,19 @@ function executeOperation(
 function addExportDirectives(operation, rawVariableValues){
   const errors = [];
   const selections = operation.selectionSet.selections;
-  console.log(JSON.stringify(selections, null, 2));
   const variableDefinitions = operation.variableDefinitions;
 
-  let exportedVariables = getExportedVariables(selections, errors);
+  const exportedVariables = getExportedVariables(selections, errors);
 
   for(const varDef of variableDefinitions){
-    let v = varDef.variable.name.value;
+    const v = varDef.variable.name.value;
     if(exports[v] !== undefined){
+      if(!isScalarType(v)){
+        errors.push(new GraphQLError(`Exported variable "${v}" is not a scalar type`));
+      }
+      if(!isScalarType(v)){
+        errors.push(new GraphQLError(`Exported variable "${v}" is not a scalar type`));
+      }
       varDef.directives.push(exports[v]);
       delete exports[v];
       if(rawVariableValues !== null && rawVariableValues[v] !== undefined){
@@ -433,7 +438,8 @@ function isEmpty(ob) {
 }
 
 /**
- * Recursively get all references to exported variables within selections.
+ * Recursively get all references to exported variables within selections. Only
+ * non-nested scalar fields are currently supported for export.
  *
  * Author: Robin Keskisärkkä
  *
@@ -441,20 +447,26 @@ function isEmpty(ob) {
  * @param errors
  * @param exports
  */
-function getExportedVariables(selections, errors, exports={}){
-  for(let selection of selections){
+function getExportedVariablesAndFields(selections, errors, level=0, exports={}){
+  for(const selection of selections){
     if(selection.selectionSet === undefined){
-      for(let directive of selection.directives){
+      // no exports from nested fields
+      if(level > 1){
+        errors.push(new GraphQLError(`Variable "${v}" cannot be exported from a nested field`));
+        return exports;
+      }
+      
+      for(const directive of selection.directives){
         if(directive.name.value === 'export'){
-          let v = directive.arguments[0].value.value;
+          const v = directive.arguments[0].value.value;
           if(exports[v] !== undefined){
-            errors.push(new GraphQLError(`Exported variable "${v}" has already been asssigned a value`));
+            errors.push(new GraphQLError(`Exported variable "${v}" can only be exported once`));
           }
-          exports[v] = directive;
+          exports[v] = [selection, directive];
         }
       }
     } else {
-      getExports(selection.selectionSet.selections, errors, exports);
+      getExportedVariables(selection.selectionSet.selections, errors, level+1, exports);
     }
   }
   return exports;
