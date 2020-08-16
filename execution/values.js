@@ -68,12 +68,6 @@ function getVariableValues(schema, varDefNodes, inputs, options) {
     errors: errors
   };
 }
-/**
- * Modified by Robin Keskisärkkä:
- * Variables associated with the 'export' directive are not validated here.
- * Throws an exception if an exported variable is provided as a variable value.
- */
-
 
 function coerceVariableValues(schema, varDefNodes, inputs, onError) {
   var coercedValues = {};
@@ -81,29 +75,23 @@ function coerceVariableValues(schema, varDefNodes, inputs, onError) {
   var _loop = function _loop(_i2) {
     var varDefNode = varDefNodes[_i2];
     var varName = varDefNode.variable.name.value;
-    var varType = (0, _typeFromAST.typeFromAST)(schema, varDefNode.type); // Return if variable is bound to the 'export' directive
-
-    var skip = false;
-
-    for (var _i4 = 0, _varDefNode$directive2 = varDefNode.directives; _i4 < _varDefNode$directive2.length; _i4++) {
-      var directive = _varDefNode$directive2[_i4];
-
-      if (directive.name.value === 'export') {
-        skip = true;
-        coercedValues[varName] = null;
-        break;
-      }
-    }
-
-    if (skip) {
-      return "continue";
-    }
+    var varType = (0, _typeFromAST.typeFromAST)(schema, varDefNode.type);
 
     if (!(0, _definition.isInputType)(varType)) {
       // Must use input types for variables. This should be caught during
       // validation, however is checked again here for safety.
       var varTypeStr = (0, _printer.print)(varDefNode.type);
       onError(new _GraphQLError.GraphQLError("Variable \"$".concat(varName, "\" expected value of type \"").concat(varTypeStr, "\" which cannot be used as an input type."), varDefNode.type));
+      return "continue";
+    } // variables with the export directive should not be provided as value
+
+
+    if (isExportedVariable(varDefNode)) {
+      if (inputs[varName] !== undefined) {
+        onError(new _GraphQLError.GraphQLError("Exported variable \"$".concat(varName, "\" must not be provided."), varDefNode));
+      }
+
+      coercedValues[varName] = null;
       return "continue";
     }
 
@@ -146,6 +134,25 @@ function coerceVariableValues(schema, varDefNodes, inputs, onError) {
   }
 
   return coercedValues;
+}
+/**
+ * Returns true if a variable is exported.
+ *
+ * @param varDefNode
+ * @returns {boolean}
+ */
+
+
+function isExportedVariable(varDefNode) {
+  for (var _i4 = 0, _varDefNode$directive2 = varDefNode.directives; _i4 < _varDefNode$directive2.length; _i4++) {
+    var directive = _varDefNode$directive2[_i4];
+
+    if (directive.name.value === 'export') {
+      return true;
+    }
+  }
+
+  return false;
 }
 /**
  * Prepares an object map of argument values given a list of argument

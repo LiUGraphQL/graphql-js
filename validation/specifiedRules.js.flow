@@ -93,6 +93,10 @@ import { UniqueFieldDefinitionNamesRule } from './rules/UniqueFieldDefinitionNam
 import { UniqueDirectiveNamesRule } from './rules/UniqueDirectiveNamesRule';
 import { PossibleTypeExtensionsRule } from './rules/PossibleTypeExtensionsRule';
 
+// Woosh-specific validation rules
+import { ExportVariablesRule } from './rules/ExportVariablesRule';
+
+
 /**
  * This set includes all validation rules defined by the GraphQL spec.
  *
@@ -126,6 +130,7 @@ export const specifiedRules = Object.freeze([
   VariablesInAllowedPositionRule,
   OverlappingFieldsCanBeMergedRule,
   UniqueInputFieldNamesRule,
+  ExportVariablesRule
 ]);
 
 /**

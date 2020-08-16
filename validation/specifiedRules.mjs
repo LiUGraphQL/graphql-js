@@ -57,7 +57,9 @@ import { UniqueTypeNamesRule } from "./rules/UniqueTypeNamesRule.mjs";
 import { UniqueEnumValueNamesRule } from "./rules/UniqueEnumValueNamesRule.mjs";
 import { UniqueFieldDefinitionNamesRule } from "./rules/UniqueFieldDefinitionNamesRule.mjs";
 import { UniqueDirectiveNamesRule } from "./rules/UniqueDirectiveNamesRule.mjs";
-import { PossibleTypeExtensionsRule } from "./rules/PossibleTypeExtensionsRule.mjs";
+import { PossibleTypeExtensionsRule } from "./rules/PossibleTypeExtensionsRule.mjs"; // Woosh-specific validation rules
+
+import { ExportVariablesRule } from "./rules/ExportVariablesRule.mjs";
 /**
  * This set includes all validation rules defined by the GraphQL spec.
  *
@@ -65,7 +67,7 @@ import { PossibleTypeExtensionsRule } from "./rules/PossibleTypeExtensionsRule.m
  * most clear output when encountering multiple validation errors.
  */
 
-export var specifiedRules = Object.freeze([ExecutableDefinitionsRule, UniqueOperationNamesRule, LoneAnonymousOperationRule, SingleFieldSubscriptionsRule, KnownTypeNamesRule, FragmentsOnCompositeTypesRule, VariablesAreInputTypesRule, ScalarLeafsRule, FieldsOnCorrectTypeRule, UniqueFragmentNamesRule, KnownFragmentNamesRule, NoUnusedFragmentsRule, PossibleFragmentSpreadsRule, NoFragmentCyclesRule, UniqueVariableNamesRule, NoUndefinedVariablesRule, NoUnusedVariablesRule, KnownDirectivesRule, UniqueDirectivesPerLocationRule, KnownArgumentNamesRule, UniqueArgumentNamesRule, ValuesOfCorrectTypeRule, ProvidedRequiredArgumentsRule, VariablesInAllowedPositionRule, OverlappingFieldsCanBeMergedRule, UniqueInputFieldNamesRule]);
+export var specifiedRules = Object.freeze([ExecutableDefinitionsRule, UniqueOperationNamesRule, LoneAnonymousOperationRule, SingleFieldSubscriptionsRule, KnownTypeNamesRule, FragmentsOnCompositeTypesRule, VariablesAreInputTypesRule, ScalarLeafsRule, FieldsOnCorrectTypeRule, UniqueFragmentNamesRule, KnownFragmentNamesRule, NoUnusedFragmentsRule, PossibleFragmentSpreadsRule, NoFragmentCyclesRule, UniqueVariableNamesRule, NoUndefinedVariablesRule, NoUnusedVariablesRule, KnownDirectivesRule, UniqueDirectivesPerLocationRule, KnownArgumentNamesRule, UniqueArgumentNamesRule, ValuesOfCorrectTypeRule, ProvidedRequiredArgumentsRule, VariablesInAllowedPositionRule, OverlappingFieldsCanBeMergedRule, UniqueInputFieldNamesRule, ExportVariablesRule]);
 /**
  * @internal
  */

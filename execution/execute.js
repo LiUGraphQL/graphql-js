@@ -143,10 +143,6 @@ function assertValidExecutionArguments(schema, document, rawVariableValues) {
  *
  * Throws a GraphQLError if a valid execution context cannot be created.
  *
- * Modified by Robin Keskisärkkä:
- * The @export directive is now added to the variable definition of all
- * variables exported inside an operation.
- *
  * @internal
  */
 
@@ -186,11 +182,8 @@ function buildExecutionContext(schema, document, rootValue, contextValue, rawVar
     }
 
     return [new _GraphQLError.GraphQLError('Must provide an operation.')];
-  } // add the export directive to exported variables
+  } // istanbul ignore next (See: 'https://github.com/graphql/graphql-js/issues/2203')
 
-
-  var exportErrors = addExportDirectives(operation, rawVariableValues);
-  if (exportErrors.length > 0) return exportErrors; // istanbul ignore next (See: 'https://github.com/graphql/graphql-js/issues/2203')
 
   var variableDefinitions = (_operation$variableDe = operation.variableDefinitions) !== null && _operation$variableDe !== void 0 ? _operation$variableDe : [];
   var coercedVariableValues = (0, _values.getVariableValues)(schema, variableDefinitions, rawVariableValues !== null && rawVariableValues !== void 0 ? rawVariableValues : {}, {
@@ -242,95 +235,6 @@ function executeOperation(exeContext, operation, rootValue) {
     exeContext.errors.push(error);
     return null;
   }
-}
-/**
- * Add the @export directive to all variables exported in a operation.
- * The function generates errors if:
- * - the same variable is exported more than once
- * - an undeclared variable is exported
- * - an exported variable has already been assigned a value
- *
- * Author: Robin Keskisärkkä
- *
- * @param operation
- * @param rawVariableValues
- * @returns {Array}
- */
-
-
-function addExportDirectives(operation, rawVariableValues) {
-  var errors = [];
-  var selections = operation.selectionSet.selections;
-  var variableDefinitions = operation.variableDefinitions;
-  var exports = getExports(selections, errors);
-
-  for (var _i4 = 0; _i4 < variableDefinitions.length; _i4++) {
-    var varDef = variableDefinitions[_i4];
-    var v = varDef.variable.name.value;
-
-    if (exports[v] !== undefined) {
-      varDef.directives.push(exports[v]);
-      delete exports[v];
-
-      if (rawVariableValues !== null && rawVariableValues[v] !== undefined) {
-        errors.push(new _GraphQLError.GraphQLError("Exported variable \"".concat(v, "\" has already been asssigned a value")));
-      }
-    }
-  }
-
-  if (!isEmpty(exports)) {
-    for (var _v in exports) {
-      errors.push(new _GraphQLError.GraphQLError("Export used for undeclared variable \"".concat(_v, "\"")));
-    }
-  }
-
-  return errors;
-}
-
-function isEmpty(ob) {
-  for (var x in ob) {
-    return false;
-  }
-
-  return true;
-}
-/**
- * Get all variables exported within an array of selections.
- *
- * Author: Robin Keskisärkkä
- *
- * @param selections
- * @param errors
- * @param exports
- */
-
-
-function getExports(selections, errors) {
-  var exports = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-
-  for (var _i6 = 0; _i6 < selections.length; _i6++) {
-    var selection = selections[_i6];
-
-    if (selection.selectionSet === undefined) {
-      for (var _i8 = 0, _selection$directives2 = selection.directives; _i8 < _selection$directives2.length; _i8++) {
-        var directive = _selection$directives2[_i8];
-
-        if (directive.name.value === 'export') {
-          var v = directive.arguments[0].value.value;
-
-          if (exports[v] !== undefined) {
-            errors.push(new _GraphQLError.GraphQLError("Exported variable \"".concat(v, "\" has already been asssigned a value")));
-          }
-
-          exports[v] = directive;
-        }
-      }
-    } else {
-      getExports(selection.selectionSet.selections, errors, exports);
-    }
-  }
-
-  return exports;
 }
 /**
  * Implements the "Evaluating selection sets" section of the spec
@@ -389,8 +293,8 @@ function executeFields(exeContext, parentType, sourceValue, path, fields) {
   var results = Object.create(null);
   var containsPromise = false;
 
-  for (var _i10 = 0, _Object$keys2 = Object.keys(fields); _i10 < _Object$keys2.length; _i10++) {
-    var responseName = _Object$keys2[_i10];
+  for (var _i4 = 0, _Object$keys2 = Object.keys(fields); _i4 < _Object$keys2.length; _i4++) {
+    var responseName = _Object$keys2[_i4];
     var fieldNodes = fields[responseName];
     var fieldPath = (0, _Path.addPath)(path, responseName);
     var result = resolveField(exeContext, parentType, sourceValue, fieldNodes, fieldPath);
@@ -427,8 +331,8 @@ function executeFields(exeContext, parentType, sourceValue, path, fields) {
 
 
 function collectFields(exeContext, runtimeType, selectionSet, fields, visitedFragmentNames) {
-  for (var _i12 = 0, _selectionSet$selecti2 = selectionSet.selections; _i12 < _selectionSet$selecti2.length; _i12++) {
-    var selection = _selectionSet$selecti2[_i12];
+  for (var _i6 = 0, _selectionSet$selecti2 = selectionSet.selections; _i6 < _selectionSet$selecti2.length; _i6++) {
+    var selection = _selectionSet$selecti2[_i6];
 
     switch (selection.kind) {
       case _kinds.Kind.FIELD:
@@ -859,8 +763,8 @@ function _collectSubfields(exeContext, returnType, fieldNodes) {
   var subFieldNodes = Object.create(null);
   var visitedFragmentNames = Object.create(null);
 
-  for (var _i14 = 0; _i14 < fieldNodes.length; _i14++) {
-    var node = fieldNodes[_i14];
+  for (var _i8 = 0; _i8 < fieldNodes.length; _i8++) {
+    var node = fieldNodes[_i8];
 
     if (node.selectionSet) {
       subFieldNodes = collectFields(exeContext, returnType, node.selectionSet, subFieldNodes, visitedFragmentNames);
@@ -907,9 +811,9 @@ var defaultTypeResolver = function defaultTypeResolver(value, contextValue, info
 
   if (promisedIsTypeOfResults.length) {
     return Promise.all(promisedIsTypeOfResults).then(function (isTypeOfResults) {
-      for (var _i15 = 0; _i15 < isTypeOfResults.length; _i15++) {
-        if (isTypeOfResults[_i15]) {
-          return possibleTypes[_i15];
+      for (var _i9 = 0; _i9 < isTypeOfResults.length; _i9++) {
+        if (isTypeOfResults[_i9]) {
+          return possibleTypes[_i9];
         }
       }
     });
