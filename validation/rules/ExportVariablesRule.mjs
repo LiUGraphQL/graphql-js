@@ -1,13 +1,15 @@
 import { typeFromAST } from "../../utilities/typeFromAST.mjs";
 import { GraphQLError } from "../../error/GraphQLError.mjs";
 import { getNamedType, getNullableType, isListType, isNullableType } from "../../type/definition.mjs";
-
+import { ASTVisitor } from "../../language/visitor.mjs";
+import { ValidationContext } from "../ValidationContext.mjs";
 /**
  * Export directives
  *
  * A GraphQL document is only valid if all exported variables are bound to the
  * valid field type.
  */
+
 export function ExportVariablesRule(context) {
   var exportedVariables = Object.create(null);
   return {
@@ -24,7 +26,7 @@ export function ExportVariablesRule(context) {
           var variableName = variable.variable.name.value;
 
           if (exportedVariables[variableName]) {
-            var variableType = typeFromAST.typeFromAST(context.getSchema(), variable.type);
+            var variableType = typeFromAST(context.getSchema(), variable.type);
             var exportedVariableType = exportedVariables[variableName];
             isValidType(variableName, variableType, exportedVariableType, context); // add the astNode of the directive to the variable
 

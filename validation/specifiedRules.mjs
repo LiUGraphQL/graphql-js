@@ -59,7 +59,7 @@ import { UniqueFieldDefinitionNamesRule } from "./rules/UniqueFieldDefinitionNam
 import { UniqueDirectiveNamesRule } from "./rules/UniqueDirectiveNamesRule.mjs";
 import { PossibleTypeExtensionsRule } from "./rules/PossibleTypeExtensionsRule.mjs"; // Woosh-specific validation rules
 
-import { ExportVariablesRules } from "./rules/ExportVariablesRule.mjs";
+import { ExportVariablesRule } from "./rules/ExportVariablesRule.mjs";
 /**
  * This set includes all validation rules defined by the GraphQL spec.
  *
@@ -67,7 +67,7 @@ import { ExportVariablesRules } from "./rules/ExportVariablesRule.mjs";
  * most clear output when encountering multiple validation errors.
  */
 
-export var specifiedRules = Object.freeze([ExecutableDefinitionsRule, UniqueOperationNamesRule, LoneAnonymousOperationRule, SingleFieldSubscriptionsRule, KnownTypeNamesRule, FragmentsOnCompositeTypesRule, VariablesAreInputTypesRule, ScalarLeafsRule, FieldsOnCorrectTypeRule, UniqueFragmentNamesRule, KnownFragmentNamesRule, NoUnusedFragmentsRule, PossibleFragmentSpreadsRule, NoFragmentCyclesRule, UniqueVariableNamesRule, NoUndefinedVariablesRule, NoUnusedVariablesRule, KnownDirectivesRule, UniqueDirectivesPerLocationRule, KnownArgumentNamesRule, UniqueArgumentNamesRule, ValuesOfCorrectTypeRule, ProvidedRequiredArgumentsRule, VariablesInAllowedPositionRule, OverlappingFieldsCanBeMergedRule, UniqueInputFieldNamesRule, ExportVariablesRules]);
+export var specifiedRules = Object.freeze([ExecutableDefinitionsRule, UniqueOperationNamesRule, LoneAnonymousOperationRule, SingleFieldSubscriptionsRule, KnownTypeNamesRule, FragmentsOnCompositeTypesRule, VariablesAreInputTypesRule, ScalarLeafsRule, FieldsOnCorrectTypeRule, UniqueFragmentNamesRule, KnownFragmentNamesRule, NoUnusedFragmentsRule, PossibleFragmentSpreadsRule, NoFragmentCyclesRule, UniqueVariableNamesRule, NoUndefinedVariablesRule, NoUnusedVariablesRule, KnownDirectivesRule, UniqueDirectivesPerLocationRule, KnownArgumentNamesRule, UniqueArgumentNamesRule, ValuesOfCorrectTypeRule, ProvidedRequiredArgumentsRule, VariablesInAllowedPositionRule, OverlappingFieldsCanBeMergedRule, UniqueInputFieldNamesRule, ExportVariablesRule]);
 /**
  * @internal
  */

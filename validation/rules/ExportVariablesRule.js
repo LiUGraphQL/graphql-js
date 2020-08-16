@@ -11,6 +11,10 @@ var _GraphQLError = require("../../error/GraphQLError");
 
 var _definition = require("../../type/definition");
 
+var _visitor = require("../../language/visitor");
+
+var _ValidationContext = require("../ValidationContext");
+
 /**
  * Export directives
  *
@@ -33,8 +37,7 @@ function ExportVariablesRule(context) {
           var variableName = variable.variable.name.value;
 
           if (exportedVariables[variableName]) {
-            var variableType = _typeFromAST.typeFromAST.typeFromAST(context.getSchema(), variable.type);
-
+            var variableType = (0, _typeFromAST.typeFromAST)(context.getSchema(), variable.type);
             var exportedVariableType = exportedVariables[variableName];
             isValidType(variableName, variableType, exportedVariableType, context); // add the astNode of the directive to the variable
 

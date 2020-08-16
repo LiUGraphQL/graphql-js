@@ -3,10 +3,8 @@
 import { typeFromAST } from '../../utilities/typeFromAST';
 import { GraphQLError } from '../../error/GraphQLError';
 import { getNamedType, getNullableType, isListType, isNullableType } from '../../type/definition';
-import { type ASTVisitor } from '../../language/visitor';
-import {
-  type ValidationContext,
-} from '../ValidationContext';
+import { ASTVisitor } from '../../language/visitor';
+import { ValidationContext } from '../ValidationContext';
 
 /**
  * Export directives
@@ -29,7 +27,7 @@ export function ExportVariablesRule(
         for(const variable of operation.variableDefinitions){
           const variableName = variable.variable.name.value;
           if(exportedVariables[variableName]) {
-            const variableType = typeFromAST.typeFromAST(context.getSchema(), variable.type);
+            const variableType = typeFromAST(context.getSchema(), variable.type);
             const exportedVariableType = exportedVariables[variableName];
             isValidType(variableName, variableType, exportedVariableType, context);
             // add the astNode of the directive to the variable
