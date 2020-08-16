@@ -100,6 +100,19 @@ function coerceVariableValues(
       continue;
     }
 
+    // variables with the export directive should not be provided as value
+    if(isExportedVariable(varDefNode)){
+      if(inputs[varName] !== undefined){
+        onError(
+          new GraphQLError(
+            `Exported variable "$${varName}" must not be provided.`, varDefNode,
+          )
+        );
+      }
+      coercedValues[varName] = null;
+      continue;
+    }
+
     if (!hasOwnProperty(inputs, varName)) {
       if (varDefNode.defaultValue) {
         coercedValues[varName] = valueFromAST(varDefNode.defaultValue, varType);
@@ -151,6 +164,22 @@ function coerceVariableValues(
   }
 
   return coercedValues;
+}
+
+
+/**
+ * Returns true if a variable is exported.
+ *
+ * @param varDefNode
+ * @returns {boolean}
+ */
+function isExportedVariable(varDefNode){
+  for(const directive of varDefNode.directives){
+    if(directive.name.value === 'export'){
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
