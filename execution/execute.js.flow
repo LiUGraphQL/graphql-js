@@ -268,10 +268,6 @@ export function assertValidExecutionArguments(
  *
  * Throws a GraphQLError if a valid execution context cannot be created.
  *
- * Modified by Robin Keskisärkkä:
- * The @export directive is now added to the variable definition of all
- * variables exported inside an operation.
- *
  * @internal
  */
 export function buildExecutionContext(
@@ -314,10 +310,6 @@ export function buildExecutionContext(
     }
     return [new GraphQLError('Must provide an operation.')];
   }
-
-  // add the export directive to exported variables
-  let exportErrors = addExportDirectives(operation, rawVariableValues);
-  if(exportErrors.length > 0) return exportErrors;
 
   // istanbul ignore next (See: 'https://github.com/graphql/graphql-js/issues/2203')
   const variableDefinitions = operation.variableDefinitions ?? [];
@@ -386,91 +378,6 @@ function executeOperation(
     exeContext.errors.push(error);
     return null;
   }
-}
-
-/**
- * Add the @export directive to all variables that are exported in an operation.
- *
- * Author: Robin Keskisärkkä
- *
- * @param operation
- * @param rawVariableValues
- * @returns {Array}
- */
-function addExportDirectives(operation, rawVariableValues){
-  const errors = [];
-  const selections = operation.selectionSet.selections;
-  const variableDefinitions = operation.variableDefinitions;
-
-  const exportedVariables = getExportedVariablesAndFields(selections, errors);
-
-  for(const varDef of variableDefinitions){
-    const v = varDef.variable.name.value;
-    if(exports[v] !== undefined){
-      if(!isScalarType(v)){
-        errors.push(new GraphQLError(`Exported variable "${v}" is not a scalar type`));
-      }
-      if(!isScalarType(v)){
-        errors.push(new GraphQLError(`Exported variable "${v}" is not a scalar type`));
-      }
-      varDef.directives.push(exports[v]);
-      delete exports[v];
-      if(rawVariableValues !== null && rawVariableValues[v] !== undefined){
-        errors.push(new GraphQLError(`Exported variable "${v}" has already been asssigned a value`));
-      }
-    }
-  }
-
-  if(!isEmpty(exports)){
-    for(const v in exports){
-      errors.push(new GraphQLError(`@export directive used for undeclared variable "${v}"`));
-    }
-  }
-
-  return errors;
-}
-
-function isEmpty(ob) {
-  for (let x in ob) {
-    return false;
-  }
-  return true;
-}
-
-/**
- * Recursively get all references to exported variables within selections. Only
- * non-nested scalar fields are currently supported for export.
- *
- * Author: Robin Keskisärkkä
- *
- * @param selections
- * @param errors
- * @param exports
- */
-function getExportedVariablesAndFields(selections, errors, level=0, exports={}){
-  for(const selection of selections){
-    if(selection.selectionSet === undefined){
-      for(const directive of selection.directives){
-        if(directive.name.value === 'export'){
-          const v = directive.arguments[0].value.value;
-
-          // don't allow exports from nested fields
-          if(level > 1){
-            errors.push(new GraphQLError(`Variable "${v}" cannot be exported from a nested field`));
-            return exports;
-          }
-
-          if(exports[v] !== undefined){
-            errors.push(new GraphQLError(`Exported variable "${v}" can only be exported once`));
-          }
-          exports[v] = [selection, directive];
-        }
-      }
-    } else {
-      getExportedVariablesAndFields(selection.selectionSet.selections, errors, level+1, exports);
-    }
-  }
-  return exports;
 }
 
 /**
