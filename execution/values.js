@@ -83,6 +83,16 @@ function coerceVariableValues(schema, varDefNodes, inputs, onError) {
       var varTypeStr = (0, _printer.print)(varDefNode.type);
       onError(new _GraphQLError.GraphQLError("Variable \"$".concat(varName, "\" expected value of type \"").concat(varTypeStr, "\" which cannot be used as an input type."), varDefNode.type));
       return "continue";
+    } // variables with the export directive should not be provided as value
+
+
+    if (isExportedVariable(varDefNode)) {
+      if (inputs[varName] !== undefined) {
+        onError(new _GraphQLError.GraphQLError("Exported variable \"$".concat(varName, "\" must not be provided."), varDefNode));
+      }
+
+      coercedValues[varName] = null;
+      return "continue";
     }
 
     if (!hasOwnProperty(inputs, varName)) {
@@ -94,16 +104,6 @@ function coerceVariableValues(schema, varDefNodes, inputs, onError) {
         onError(new _GraphQLError.GraphQLError("Variable \"$".concat(varName, "\" of required type \"").concat(_varTypeStr, "\" was not provided."), varDefNode));
       }
 
-      return "continue";
-    } // variables with the export directive should not be provided as value
-
-
-    if (isExportedVariable(varDefNode)) {
-      if (inputs[varName] !== undefined) {
-        onError(new _GraphQLError.GraphQLError("Exported variable \"$".concat(varName, "\" must not be provided."), varDefNode));
-      }
-
-      coercedValues[varName] = null;
       return "continue";
     }
 
