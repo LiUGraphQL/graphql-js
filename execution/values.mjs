@@ -74,6 +74,16 @@ function coerceVariableValues(schema, varDefNodes, inputs, onError) {
       }
 
       return "continue";
+    } // variables with the export directive should not be provided as value
+
+
+    if (isExportedVariable(varDefNode)) {
+      if (inputs[varName] !== undefined) {
+        onError(new GraphQLError("Exported variable \"$".concat(varName, "\" must not be provided."), varDefNode));
+      }
+
+      coercedValues[varName] = null;
+      return "continue";
     }
 
     var value = inputs[varName];
@@ -105,6 +115,25 @@ function coerceVariableValues(schema, varDefNodes, inputs, onError) {
   return coercedValues;
 }
 /**
+ * Returns true if a variable is exported.
+ *
+ * @param varDefNode
+ * @returns {boolean}
+ */
+
+
+function isExportedVariable(varDefNode) {
+  for (var _i4 = 0, _varDefNode$directive2 = varDefNode.directives; _i4 < _varDefNode$directive2.length; _i4++) {
+    var directive = _varDefNode$directive2[_i4];
+
+    if (directive.name.value === 'export') {
+      return true;
+    }
+  }
+
+  return false;
+}
+/**
  * Prepares an object map of argument values given a list of argument
  * definitions and list of argument AST nodes.
  *
@@ -126,8 +155,8 @@ export function getArgumentValues(def, node, variableValues) {
     return arg.name.value;
   });
 
-  for (var _i4 = 0, _def$args2 = def.args; _i4 < _def$args2.length; _i4++) {
-    var argDef = _def$args2[_i4];
+  for (var _i6 = 0, _def$args2 = def.args; _i6 < _def$args2.length; _i6++) {
+    var argDef = _def$args2[_i6];
     var name = argDef.name;
     var argType = argDef.type;
     var argumentNode = argNodeMap[name];
