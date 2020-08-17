@@ -91,7 +91,7 @@ function coerceVariableValues(schema, varDefNodes, inputs, onError) {
         onError(new _GraphQLError.GraphQLError("Exported variable \"$".concat(varName, "\" must not be provided."), varDefNode));
       }
 
-      coercedValues[varName] = null;
+      coercedValues[varName] = varDefNode;
       return "continue";
     }
 

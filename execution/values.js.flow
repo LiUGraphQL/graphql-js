@@ -109,7 +109,7 @@ function coerceVariableValues(
           )
         );
       }
-      coercedValues[varName] = null;
+      coercedValues[varName] = varDefNode;
       continue;
     }
 
