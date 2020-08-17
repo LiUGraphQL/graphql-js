@@ -31,7 +31,12 @@ export function ExportVariablesRule(context) {
             isValidType(variableName, variableType, exportedVariableType, context); // add the astNode of the directive to the variable
 
             variable.directives.push(exportDirective.astNode);
+            delete exportedVariables[variableName];
           }
+        }
+
+        if (Object.keys(exportedVariables).length !== 0) {
+          context.reportError(new GraphQLError("Exported variable(s) \"$".concat(Object.keys(exportedVariables), "\" not declared")));
         }
       }
     },
