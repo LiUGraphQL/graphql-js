@@ -35,15 +35,16 @@ export function ExportVariablesRule(context) {
           }
         }
 
-        if (Object.keys(exportedVariables).length !== 0) {
-          context.reportError(new GraphQLError("Exported variable(s) \"$".concat(Object.keys(exportedVariables), "\" not declared")));
+        for (var _i4 = 0, _Object$keys2 = Object.keys(exportedVariables); _i4 < _Object$keys2.length; _i4++) {
+          var _variableName = _Object$keys2[_i4];
+          context.reportError(new GraphQLError("Exported variable \"$".concat(_variableName, "\" referenced but not declared")));
         }
       }
     },
     Field: function Field(node) {
       if (node.directives.length > 0) {
-        for (var _i4 = 0, _node$directives2 = node.directives; _i4 < _node$directives2.length; _i4++) {
-          var directive = _node$directives2[_i4];
+        for (var _i6 = 0, _node$directives2 = node.directives; _i6 < _node$directives2.length; _i6++) {
+          var directive = _node$directives2[_i6];
 
           if (directive.name.value === 'export') {
             var as = directive.arguments[0].value.value;

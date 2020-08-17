@@ -36,8 +36,8 @@ export function ExportVariablesRule(
           }
         }
 
-        if(Object.keys(exportedVariables).length !== 0){
-          context.reportError(new GraphQLError(`Exported variable(s) "$${Object.keys(exportedVariables)}" not declared`));
+        for(const variableName of Object.keys(exportedVariables)){
+          context.reportError(new GraphQLError(`Exported variable "$${variableName}" referenced but not declared`));
         }
       }
     },
