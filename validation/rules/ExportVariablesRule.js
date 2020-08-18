@@ -54,6 +54,8 @@ function ExportVariablesRule(context) {
     },
     Field: function Field(node) {
       if (node.directives.length > 0) {
+        console.log(node);
+
         for (var _i6 = 0, _node$directives2 = node.directives; _i6 < _node$directives2.length; _i6++) {
           var directive = _node$directives2[_i6];
 

@@ -43,6 +43,7 @@ export function ExportVariablesRule(
     },
     Field: function Field(node) {
       if(node.directives.length > 0) {
+        console.log(node);
         for(const directive of node.directives) {
           if(directive.name.value === 'export'){
             const as = directive.arguments[0].value.value;
