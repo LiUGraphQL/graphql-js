@@ -1,17 +1,15 @@
-// @flow strict
-
 import objectValues from '../polyfills/objectValues';
 
+import type { ObjMap } from '../jsutils/ObjMap';
 import inspect from '../jsutils/inspect';
 import invariant from '../jsutils/invariant';
 import keyValMap from '../jsutils/keyValMap';
-import { type ObjMap } from '../jsutils/ObjMap';
 
+import type { GraphQLNamedType } from '../type/definition';
 import { GraphQLSchema } from '../type/schema';
 import { GraphQLDirective } from '../type/directives';
 import { isIntrospectionType } from '../type/introspection';
 import {
-  type GraphQLNamedType,
   GraphQLObjectType,
   GraphQLInterfaceType,
   GraphQLUnionType,

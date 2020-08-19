@@ -71,7 +71,7 @@ var _UniqueDirectiveNamesRule = require("./rules/UniqueDirectiveNamesRule");
 
 var _PossibleTypeExtensionsRule = require("./rules/PossibleTypeExtensionsRule");
 
-var _ExportVariablesRule = require("./rules/ExportVariablesRule");
+var _ExportVariablesRule = require("./rules/custom/ExportVariablesRule");
 
 // Spec Section: "Executable Definitions"
 // Spec Section: "Operation Name Uniqueness"
@@ -100,7 +100,7 @@ var _ExportVariablesRule = require("./rules/ExportVariablesRule");
 // Spec Section: "Field Selection Merging"
 // Spec Section: "Input Object Field Uniqueness"
 // SDL-specific validation rules
-// Woosh-specific validation rules
+// Export variables rule
 
 /**
  * This set includes all validation rules defined by the GraphQL spec.

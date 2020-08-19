@@ -60,6 +60,21 @@ export function execute(argsOrSchema, document, rootValue, contextValue, variabl
     typeResolver: typeResolver
   });
 }
+/**
+ * Also implements the "Evaluating requests" section of the GraphQL specification.
+ * However, it guarantees to complete synchronously (or throw an error) assuming
+ * that all field resolvers are also synchronous.
+ */
+
+export function executeSync(args) {
+  var result = executeImpl(args); // Assert that the execution was synchronous.
+
+  if (isPromise(result)) {
+    throw new Error('GraphQL execution failed to complete synchronously.');
+  }
+
+  return result;
+}
 
 function executeImpl(args) {
   var schema = args.schema,
@@ -205,8 +220,6 @@ function executeOperation(exeContext, operation, rootValue) {
   var path = undefined; // Errors from sub-fields of a NonNull type may propagate to the top level,
   // at which point we still log the error and null the parent field, which
   // in this case is the entire response.
-  //
-  // Similar to completeValueCatchingError.
 
   try {
     var result = operation.operation === 'mutation' ? executeFieldsSerially(exeContext, type, rootValue, path, fields) : executeFields(exeContext, type, rootValue, path, fields);
@@ -284,13 +297,13 @@ function executeFields(exeContext, parentType, sourceValue, path, fields) {
   for (var _i4 = 0, _Object$keys2 = Object.keys(fields); _i4 < _Object$keys2.length; _i4++) {
     var responseName = _Object$keys2[_i4];
     var fieldNodes = fields[responseName];
-    var fieldPath = addPath(path, responseName);
+    var fieldPath = addPath(path, responseName, parentType.name);
     var result = resolveField(exeContext, parentType, sourceValue, fieldNodes, fieldPath);
 
     if (result !== undefined) {
       results[responseName] = result;
 
-      if (!containsPromise && isPromise(result)) {
+      if (isPromise(result)) {
         containsPromise = true;
       }
     }
@@ -443,42 +456,10 @@ function resolveField(exeContext, parentType, source, fieldNodes, path) {
     return;
   }
 
+  var returnType = fieldDef.type;
   var resolveFn = (_fieldDef$resolve = fieldDef.resolve) !== null && _fieldDef$resolve !== void 0 ? _fieldDef$resolve : exeContext.fieldResolver;
-  var info = buildResolveInfo(exeContext, fieldDef, fieldNodes, parentType, path); // Get the resolve function, regardless of if its result is normal
-  // or abrupt (error).
+  var info = buildResolveInfo(exeContext, fieldDef, fieldNodes, parentType, path); // Get the resolve function, regardless of if its result is normal or abrupt (error).
 
-  var result = resolveFieldValueOrError(exeContext, fieldDef, fieldNodes, resolveFn, source, info);
-  return completeValueCatchingError(exeContext, fieldDef.type, fieldNodes, info, path, result);
-}
-/**
- * @internal
- */
-
-
-export function buildResolveInfo(exeContext, fieldDef, fieldNodes, parentType, path) {
-  // The resolve function's optional fourth argument is a collection of
-  // information about the current execution state.
-  return {
-    fieldName: fieldDef.name,
-    fieldNodes: fieldNodes,
-    returnType: fieldDef.type,
-    parentType: parentType,
-    path: path,
-    schema: exeContext.schema,
-    fragments: exeContext.fragments,
-    rootValue: exeContext.rootValue,
-    operation: exeContext.operation,
-    variableValues: exeContext.variableValues
-  };
-}
-/**
- * Isolates the "ReturnOrAbrupt" behavior to not de-opt the `resolveField`
- * function. Returns the result of resolveFn or the abrupt-return Error object.
- *
- * @internal
- */
-
-export function resolveFieldValueOrError(exeContext, fieldDef, fieldNodes, resolveFn, source, info) {
   try {
     // Build a JS object of arguments from the field.arguments AST, using the
     // variables scope to fulfill any variable references.
@@ -489,25 +470,6 @@ export function resolveFieldValueOrError(exeContext, fieldDef, fieldNodes, resol
 
     var _contextValue = exeContext.contextValue;
     var result = resolveFn(source, args, _contextValue, info);
-    return isPromise(result) ? result.then(undefined, asErrorInstance) : result;
-  } catch (error) {
-    return asErrorInstance(error);
-  }
-} // Sometimes a non-error is thrown, wrap it as an Error instance to ensure a
-// consistent Error interface.
-
-function asErrorInstance(error) {
-  if (error instanceof Error) {
-    return error;
-  }
-
-  return new Error('Unexpected error value: ' + inspect(error));
-} // This is a small wrapper around completeValue which detects and logs errors
-// in the execution context.
-
-
-function completeValueCatchingError(exeContext, returnType, fieldNodes, info, path, result) {
-  try {
     var completed;
 
     if (isPromise(result)) {
@@ -531,9 +493,30 @@ function completeValueCatchingError(exeContext, returnType, fieldNodes, info, pa
     return handleFieldError(error, fieldNodes, path, returnType, exeContext);
   }
 }
+/**
+ * @internal
+ */
+
+
+export function buildResolveInfo(exeContext, fieldDef, fieldNodes, parentType, path) {
+  // The resolve function's optional fourth argument is a collection of
+  // information about the current execution state.
+  return {
+    fieldName: fieldDef.name,
+    fieldNodes: fieldNodes,
+    returnType: fieldDef.type,
+    parentType: parentType,
+    path: path,
+    schema: exeContext.schema,
+    fragments: exeContext.fragments,
+    rootValue: exeContext.rootValue,
+    operation: exeContext.operation,
+    variableValues: exeContext.variableValues
+  };
+}
 
 function handleFieldError(rawError, fieldNodes, path, returnType, exeContext) {
-  var error = locatedError(asErrorInstance(rawError), fieldNodes, pathToArray(path)); // If the field type is non-nullable, then it is resolved without any
+  var error = locatedError(rawError, fieldNodes, pathToArray(path)); // If the field type is non-nullable, then it is resolved without any
   // protection from errors, however it still properly locates the error.
 
   if (isNonNullType(returnType)) {
@@ -635,14 +618,32 @@ function completeListValue(exeContext, returnType, fieldNodes, info, path, resul
   var completedResults = arrayFrom(result, function (item, index) {
     // No need to modify the info object containing the path,
     // since from here on it is not ever accessed by resolver functions.
-    var fieldPath = addPath(path, index);
-    var completedItem = completeValueCatchingError(exeContext, itemType, fieldNodes, info, fieldPath, item);
+    var itemPath = addPath(path, index, undefined);
 
-    if (!containsPromise && isPromise(completedItem)) {
-      containsPromise = true;
+    try {
+      var completedItem;
+
+      if (isPromise(item)) {
+        completedItem = item.then(function (resolved) {
+          return completeValue(exeContext, itemType, fieldNodes, info, itemPath, resolved);
+        });
+      } else {
+        completedItem = completeValue(exeContext, itemType, fieldNodes, info, itemPath, item);
+      }
+
+      if (isPromise(completedItem)) {
+        containsPromise = true; // Note: we don't rely on a `catch` method, but we do expect "thenable"
+        // to take a second callback for the error case.
+
+        return completedItem.then(undefined, function (error) {
+          return handleFieldError(error, fieldNodes, itemPath, itemType, exeContext);
+        });
+      }
+
+      return completedItem;
+    } catch (error) {
+      return handleFieldError(error, fieldNodes, itemPath, itemType, exeContext);
     }
-
-    return completedItem;
   });
   return containsPromise ? Promise.all(completedResults) : completedResults;
 }
@@ -825,12 +826,12 @@ export var defaultFieldResolver = function defaultFieldResolver(source, args, co
 };
 /**
  * This method looks up the field on the given type definition.
- * It has special casing for the two introspection fields, __schema
- * and __typename. __typename is special because it can always be
- * queried as a field, even in situations where no other fields
- * are allowed, like on a Union. __schema could get automatically
- * added to the query type, but that would require mutating type
- * definitions, which would cause issues.
+ * It has special casing for the three introspection fields,
+ * __schema, __type and __typename. __typename is special because
+ * it can always be queried as a field, even in situations where no
+ * other fields are allowed, like on a Union. __schema and __type
+ * could get automatically added to the query type, but that would
+ * require mutating type definitions, which would cause issues.
  *
  * @internal
  */

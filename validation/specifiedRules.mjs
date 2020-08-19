@@ -57,9 +57,9 @@ import { UniqueTypeNamesRule } from "./rules/UniqueTypeNamesRule.mjs";
 import { UniqueEnumValueNamesRule } from "./rules/UniqueEnumValueNamesRule.mjs";
 import { UniqueFieldDefinitionNamesRule } from "./rules/UniqueFieldDefinitionNamesRule.mjs";
 import { UniqueDirectiveNamesRule } from "./rules/UniqueDirectiveNamesRule.mjs";
-import { PossibleTypeExtensionsRule } from "./rules/PossibleTypeExtensionsRule.mjs"; // Woosh-specific validation rules
+import { PossibleTypeExtensionsRule } from "./rules/PossibleTypeExtensionsRule.mjs"; // Export variables rule
 
-import { ExportVariablesRule } from "./rules/ExportVariablesRule.mjs";
+import { ExportVariablesRule } from "./rules/custom/ExportVariablesRule.mjs";
 /**
  * This set includes all validation rules defined by the GraphQL spec.
  *

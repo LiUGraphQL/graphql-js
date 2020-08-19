@@ -2,9 +2,6 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-// FIXME
-
-/* eslint-disable import/no-cycle */
 import objectEntries from "../polyfills/objectEntries.mjs";
 import { SYMBOL_TO_STRING_TAG } from "../polyfills/symbols.mjs";
 import inspect from "../jsutils/inspect.mjs";
@@ -19,9 +16,9 @@ import isObjectLike from "../jsutils/isObjectLike.mjs";
 import identityFunc from "../jsutils/identityFunc.mjs";
 import defineInspect from "../jsutils/defineInspect.mjs";
 import suggestionList from "../jsutils/suggestionList.mjs";
+import { GraphQLError } from "../error/GraphQLError.mjs";
 import { Kind } from "../language/kinds.mjs";
 import { print } from "../language/printer.mjs";
-import { GraphQLError } from "../error/GraphQLError.mjs";
 import { valueFromASTUntyped } from "../utilities/valueFromASTUntyped.mjs";
 export function isType(type) {
   return isScalarType(type) || isObjectType(type) || isInterfaceType(type) || isUnionType(type) || isEnumType(type) || isInputObjectType(type) || isListType(type) || isNonNullType(type);
@@ -414,8 +411,8 @@ export var GraphQLScalarType = /*#__PURE__*/function () {
     this.specifiedByUrl = config.specifiedByUrl;
     this.serialize = (_config$serialize = config.serialize) !== null && _config$serialize !== void 0 ? _config$serialize : identityFunc;
     this.parseValue = parseValue;
-    this.parseLiteral = (_config$parseLiteral = config.parseLiteral) !== null && _config$parseLiteral !== void 0 ? _config$parseLiteral : function (node) {
-      return parseValue(valueFromASTUntyped(node));
+    this.parseLiteral = (_config$parseLiteral = config.parseLiteral) !== null && _config$parseLiteral !== void 0 ? _config$parseLiteral : function (node, variables) {
+      return parseValue(valueFromASTUntyped(node, variables));
     };
     this.extensions = config.extensions && toObjMap(config.extensions);
     this.astNode = config.astNode;

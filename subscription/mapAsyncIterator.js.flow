@@ -1,8 +1,6 @@
-// @flow strict
-
 import { SYMBOL_ASYNC_ITERATOR } from '../polyfills/symbols';
 
-import { type PromiseOrValue } from '../jsutils/PromiseOrValue';
+import type { PromiseOrValue } from '../jsutils/PromiseOrValue';
 
 /**
  * Given an AsyncIterable and a callback function, return an AsyncIterator

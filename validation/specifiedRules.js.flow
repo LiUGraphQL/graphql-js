@@ -1,5 +1,3 @@
-// @flow strict
-
 // Spec Section: "Executable Definitions"
 import { ExecutableDefinitionsRule } from './rules/ExecutableDefinitionsRule';
 
@@ -93,8 +91,8 @@ import { UniqueFieldDefinitionNamesRule } from './rules/UniqueFieldDefinitionNam
 import { UniqueDirectiveNamesRule } from './rules/UniqueDirectiveNamesRule';
 import { PossibleTypeExtensionsRule } from './rules/PossibleTypeExtensionsRule';
 
-// Woosh-specific validation rules
-import { ExportVariablesRule } from './rules/ExportVariablesRule';
+// Export variables rule
+import { ExportVariablesRule } from './rules/custom/ExportVariablesRule';
 
 
 /**

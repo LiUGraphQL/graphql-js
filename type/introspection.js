@@ -24,9 +24,6 @@ var _definition = require("./definition");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// FIXME
-
-/* eslint-disable import/no-cycle */
 var __Schema = new _definition.GraphQLObjectType({
   name: '__Schema',
   description: 'A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.',
@@ -281,17 +278,10 @@ var __Type = new _definition.GraphQLObjectType({
 
           if ((0, _definition.isObjectType)(type) || (0, _definition.isInterfaceType)(type)) {
             var fields = (0, _objectValues.default)(type.getFields());
-
-            if (!includeDeprecated) {
-              fields = fields.filter(function (field) {
-                return !field.isDeprecated;
-              });
-            }
-
-            return fields;
+            return includeDeprecated ? fields : fields.filter(function (field) {
+              return field.deprecationReason == null;
+            });
           }
-
-          return null;
         }
       },
       interfaces: {
@@ -325,14 +315,9 @@ var __Type = new _definition.GraphQLObjectType({
 
           if ((0, _definition.isEnumType)(type)) {
             var values = type.getValues();
-
-            if (!includeDeprecated) {
-              values = values.filter(function (value) {
-                return !value.isDeprecated;
-              });
-            }
-
-            return values;
+            return includeDeprecated ? values : values.filter(function (field) {
+              return field.deprecationReason == null;
+            });
           }
         }
       },
@@ -388,7 +373,7 @@ var __Field = new _definition.GraphQLObjectType({
       isDeprecated: {
         type: (0, _definition.GraphQLNonNull)(_scalars.GraphQLBoolean),
         resolve: function resolve(field) {
-          return field.isDeprecated;
+          return field.deprecationReason != null;
         }
       },
       deprecationReason: {
@@ -462,7 +447,7 @@ var __EnumValue = new _definition.GraphQLObjectType({
       isDeprecated: {
         type: (0, _definition.GraphQLNonNull)(_scalars.GraphQLBoolean),
         resolve: function resolve(enumValue) {
-          return enumValue.isDeprecated;
+          return enumValue.deprecationReason != null;
         }
       },
       deprecationReason: {
