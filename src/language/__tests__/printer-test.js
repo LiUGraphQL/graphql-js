@@ -1,5 +1,3 @@
-// @flow strict
-
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
@@ -25,7 +23,8 @@ describe('Printer: Query document', () => {
 
   it('produces helpful error messages', () => {
     const badAST = { random: 'Data' };
-    // $DisableFlowOnNegativeTest
+
+    // $FlowExpectedError
     expect(() => print(badAST)).to.throw(
       'Invalid AST Node: { random: "Data" }.',
     );

@@ -1,5 +1,3 @@
-// @flow strict
-
 import inspect from '../../jsutils/inspect';
 import invariant from '../../jsutils/invariant';
 import didYouMean from '../../jsutils/didYouMean';
@@ -7,8 +5,8 @@ import suggestionList from '../../jsutils/suggestionList';
 
 import { GraphQLError } from '../../error/GraphQLError';
 
+import type { ASTVisitor } from '../../language/visitor';
 import { Kind } from '../../language/kinds';
-import { type ASTVisitor } from '../../language/visitor';
 import { isTypeDefinitionNode } from '../../language/predicates';
 
 import {
@@ -20,7 +18,7 @@ import {
   isInputObjectType,
 } from '../../type/definition';
 
-import { type SDLValidationContext } from '../ValidationContext';
+import type { SDLValidationContext } from '../ValidationContext';
 
 /**
  * Possible type extension

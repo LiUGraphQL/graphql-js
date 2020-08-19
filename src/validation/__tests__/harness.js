@@ -1,5 +1,3 @@
-// @flow strict
-
 import { expect } from 'chai';
 
 import { parse } from '../../language/parser';
@@ -9,10 +7,7 @@ import { GraphQLSchema } from '../../type/schema';
 import { buildSchema } from '../../utilities/buildASTSchema';
 
 import { validate, validateSDL } from '../validate';
-import {
-  type ValidationRule,
-  type SDLValidationRule,
-} from '../ValidationContext';
+import type { ValidationRule, SDLValidationRule } from '../ValidationContext';
 
 export const testSchema = buildSchema(`
   interface Being {
@@ -151,13 +146,16 @@ export function expectValidationErrorsWithSchema(
   schema: GraphQLSchema,
   rule: ValidationRule,
   queryStr: string,
-) {
+): any {
   const doc = parse(queryStr);
   const errors = validate(schema, doc, [rule]);
   return expect(errors);
 }
 
-export function expectValidationErrors(rule: ValidationRule, queryStr: string) {
+export function expectValidationErrors(
+  rule: ValidationRule,
+  queryStr: string,
+): any {
   return expectValidationErrorsWithSchema(testSchema, rule, queryStr);
 }
 
@@ -165,7 +163,7 @@ export function expectSDLValidationErrors(
   schema: ?GraphQLSchema,
   rule: SDLValidationRule,
   sdlStr: string,
-) {
+): any {
   const doc = parse(sdlStr);
   const errors = validateSDL(doc, schema, [rule]);
   return expect(errors);

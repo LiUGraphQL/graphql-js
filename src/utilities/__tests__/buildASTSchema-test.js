@@ -1,5 +1,3 @@
-// @flow strict
-
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
@@ -11,8 +9,9 @@ import { Kind } from '../../language/kinds';
 import { parse } from '../../language/parser';
 import { print } from '../../language/printer';
 
+import { GraphQLSchema } from '../../type/schema';
 import { validateSchema } from '../../type/validate';
-import { __Schema } from '../../type/introspection';
+import { __Schema, __EnumValue } from '../../type/introspection';
 import {
   assertDirective,
   GraphQLSkipDirective,
@@ -112,6 +111,21 @@ describe('Schema Builder', () => {
       }
     `;
     expect(() => buildSchema(sdl)).to.not.throw();
+  });
+
+  it('Match order of default types and directives', () => {
+    const schema = new GraphQLSchema({});
+    const sdlSchema = buildASTSchema({
+      kind: Kind.DOCUMENT,
+      definitions: [],
+    });
+
+    expect(sdlSchema.getDirectives()).to.deep.equal(schema.getDirectives());
+
+    expect(sdlSchema.getTypeMap()).to.deep.equal(schema.getTypeMap());
+    expect(Object.keys(sdlSchema.getTypeMap())).to.deep.equal(
+      Object.keys(schema.getTypeMap()),
+    );
   });
 
   it('Empty type', () => {
@@ -1089,6 +1103,21 @@ describe('Schema Builder', () => {
     expect(schema.getType('__Schema')).to.equal(__Schema);
   });
 
+  it('Allows to reference introspection types', () => {
+    const schema = buildSchema(`
+      type Query {
+        introspectionField: __EnumValue
+      }
+    `);
+
+    const queryType = assertObjectType(schema.getType('Query'));
+    expect(queryType.getFields()).to.have.nested.property(
+      'introspectionField.type',
+      __EnumValue,
+    );
+    expect(schema.getType('__EnumValue')).to.equal(__EnumValue);
+  });
+
   it('Rejects invalid SDL', () => {
     const sdl = `
       type Query {
@@ -1120,12 +1149,12 @@ describe('Schema Builder', () => {
   });
 
   it('Rejects invalid AST', () => {
-    // $DisableFlowOnNegativeTest
+    // $FlowExpectedError
     expect(() => buildASTSchema(null)).to.throw(
       'Must provide valid Document AST',
     );
 
-    // $DisableFlowOnNegativeTest
+    // $FlowExpectedError
     expect(() => buildASTSchema({})).to.throw(
       'Must provide valid Document AST',
     );

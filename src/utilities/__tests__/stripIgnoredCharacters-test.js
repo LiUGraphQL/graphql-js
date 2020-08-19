@@ -1,5 +1,3 @@
-// @flow strict
-
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 
@@ -101,14 +99,14 @@ function expectStripped(docString) {
 
 describe('stripIgnoredCharacters', () => {
   it('asserts that a source was provided', () => {
-    // $DisableFlowOnNegativeTest
+    // $FlowExpectedError
     expect(() => stripIgnoredCharacters()).to.throw(
       'Must provide string or Source. Received: undefined.',
     );
   });
 
   it('asserts that a valid source was provided', () => {
-    // $DisableFlowOnNegativeTest
+    // $FlowExpectedError
     expect(() => stripIgnoredCharacters({})).to.throw(
       'Must provide string or Source. Received: {}.',
     );
