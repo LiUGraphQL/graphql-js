@@ -1,6 +1,5 @@
 // @flow strict
 
-import { typeFromAST } from '../../utilities/typeFromAST';
 import { GraphQLError } from '../../error/GraphQLError';
 import { getNamedType, getNullableType, isListType, isNullableType } from '../../type/definition';
 import { ASTVisitor } from '../../language/visitor';
@@ -20,37 +19,51 @@ export function ExportVariablesRule(
     OperationDefinition: {
       leave: function leave(operation) {
         const exportDirective = context.getSchema().getDirective('export');
-        if(exportDirective === undefined){
-          return;
-        }
+        if(exportDirective === undefined) return;
 
-        for(const variable of operation.variableDefinitions){
+        // exported variables must not have any default value
+        for(const variable of operation.variableDefinitions) {
           const variableName = variable.variable.name.value;
-          if(exportedVariables[variableName]) {
-            const variableType = typeFromAST(context.getSchema(), variable.type);
-            const exportedVariableType = exportedVariables[variableName];
-            isValidType(variableName, variableType, exportedVariableType, context);
-            // add the astNode of the directive to the variable
+          if(exportedVariables[variableName] !== undefined) {
+            if (variable.defaultValue !== undefined) {
+              context.reportError(new GraphQLError(`Exported variable "$${variableName}" cannot have a default value`));
+            }
+            // add directive as value of variable
             variable.directives.push(exportDirective.astNode);
-            delete exportedVariables[variableName];
           }
         }
 
-        for(const variableName of Object.keys(exportedVariables)){
-          context.reportError(new GraphQLError(`Exported variable "$${variableName}" referenced but not declared`));
+        // check variable usage
+        const usages = context.getRecursiveVariableUsages(operation);
+        for (const { node, type } of usages) {
+          const variableName = node.name.value;
+          if(exportedVariables[variableName]) {
+            const exportedVariableType = exportedVariables[variableName].type;
+            // exported variable must be correct type
+            isValidType(variableName, type, exportedVariableType, context);
+            // exported variable must be defined before it is referenced
+            if(exportedVariables[variableName].loc.start > node.loc.start){
+              context.reportError(new GraphQLError(`Exported variable $${variableName} referenced before assignment`));
+            }
+            // remove from list of exported variables
+            delete exportedVariables[variableName];
+          }
+        }
+        // all exported variables declared?
+        for (const variableName of Object.keys(exportedVariables){
+          context.reportError(new GraphQLError(`Exported variable "$${variableName}" is referenced but never declared`));
         }
       }
     },
     Field: function Field(node) {
       if(node.directives.length > 0) {
-        console.log(node);
         for(const directive of node.directives) {
           if(directive.name.value === 'export'){
             const as = directive.arguments[0].value.value;
             if (exportedVariables[as] !== undefined) {
               context.reportError(new GraphQLError(`Variable "$${as}" has already been exported`), [node]);
             }
-            exportedVariables[as] = context.getType();
+            exportedVariables[as] = { 'type': context.getType(), 'loc': node.loc };
           }
         }
       }
@@ -75,9 +88,7 @@ function isValidType(variableName, variableType, exportedType, context) {
   let type1 = getNullableType(variableType);
   let type2 = getNullableType(exportedType);
   if(isListType(type1) && isListType(type2)){
-    type1 = getNamedType(type1);
-    type2 = getNamedType(type2);
-    isValidType(variableName, type1, type2, context);
+    isValidType(variableName, getNamedType(type1), getNamedType(type2), context);
   } else if(type1 !== type2){
     context.reportError(new GraphQLError(`Variable "$${variableName}" of type "${type1}" exported from field of type "${type2}"`));
   }
