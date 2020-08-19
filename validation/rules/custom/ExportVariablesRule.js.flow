@@ -1,15 +1,19 @@
-// @flow strict
-
-import { GraphQLError } from '../../error/GraphQLError';
-import { getNamedType, getNullableType, isListType, isNullableType } from '../../type/definition';
-import { ASTVisitor } from '../../language/visitor';
-import { ValidationContext } from '../ValidationContext';
+import { GraphQLError } from '../../../error/GraphQLError';
+import {
+  getNamedType,
+  getNullableType,
+  isListType,
+  isNullableType
+} from '../../../type/definition';
+import { ASTVisitor } from '../../../language/visitor';
+import { ValidationContext } from '../../ValidationContext';
 
 /**
- * Export directives
+ * Rule for the export variable directive
  *
- * A GraphQL document is only valid if all exported variables are bound to the
- * valid field type.
+ * A GraphQL document is only valid if all exported variables have been declared,
+ * are bound to the correct scalar field type, has no default value, and is
+ * exported before being referenced.
  */
 export function ExportVariablesRule(
   context: ValidationContext,
@@ -50,7 +54,7 @@ export function ExportVariablesRule(
           }
         }
         // all exported variables declared?
-        for (const variableName of Object.keys(exportedVariables){
+        for (const variableName of Object.keys(exportedVariables)){
           context.reportError(new GraphQLError(`Exported variable "$${variableName}" is referenced but never declared`));
         }
       }
@@ -85,8 +89,8 @@ function isValidType(variableName, variableType, exportedType, context) {
     return;
   }
 
-  let type1 = getNullableType(variableType);
-  let type2 = getNullableType(exportedType);
+  const type1 = getNullableType(variableType);
+  const type2 = getNullableType(exportedType);
   if(isListType(type1) && isListType(type2)){
     isValidType(variableName, getNamedType(type1), getNamedType(type2), context);
   } else if(type1 !== type2){

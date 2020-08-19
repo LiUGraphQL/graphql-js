@@ -1,6 +1,3 @@
-// FIXME
-
-/* eslint-disable import/no-cycle */
 import objectValues from "../polyfills/objectValues.mjs";
 import inspect from "../jsutils/inspect.mjs";
 import invariant from "../jsutils/invariant.mjs";
@@ -254,17 +251,10 @@ export var __Type = new GraphQLObjectType({
 
           if (isObjectType(type) || isInterfaceType(type)) {
             var fields = objectValues(type.getFields());
-
-            if (!includeDeprecated) {
-              fields = fields.filter(function (field) {
-                return !field.isDeprecated;
-              });
-            }
-
-            return fields;
+            return includeDeprecated ? fields : fields.filter(function (field) {
+              return field.deprecationReason == null;
+            });
           }
-
-          return null;
         }
       },
       interfaces: {
@@ -298,14 +288,9 @@ export var __Type = new GraphQLObjectType({
 
           if (isEnumType(type)) {
             var values = type.getValues();
-
-            if (!includeDeprecated) {
-              values = values.filter(function (value) {
-                return !value.isDeprecated;
-              });
-            }
-
-            return values;
+            return includeDeprecated ? values : values.filter(function (field) {
+              return field.deprecationReason == null;
+            });
           }
         }
       },
@@ -358,7 +343,7 @@ export var __Field = new GraphQLObjectType({
       isDeprecated: {
         type: GraphQLNonNull(GraphQLBoolean),
         resolve: function resolve(field) {
-          return field.isDeprecated;
+          return field.deprecationReason != null;
         }
       },
       deprecationReason: {
@@ -426,7 +411,7 @@ export var __EnumValue = new GraphQLObjectType({
       isDeprecated: {
         type: GraphQLNonNull(GraphQLBoolean),
         resolve: function resolve(enumValue) {
-          return enumValue.isDeprecated;
+          return enumValue.deprecationReason != null;
         }
       },
       deprecationReason: {

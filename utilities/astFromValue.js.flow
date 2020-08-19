@@ -1,5 +1,3 @@
-// @flow strict
-
 import isFinite from '../polyfills/isFinite';
 import arrayFrom from '../polyfills/arrayFrom';
 import objectValues from '../polyfills/objectValues';
@@ -9,12 +7,12 @@ import invariant from '../jsutils/invariant';
 import isObjectLike from '../jsutils/isObjectLike';
 import isCollection from '../jsutils/isCollection';
 
+import type { ValueNode } from '../language/ast';
 import { Kind } from '../language/kinds';
-import { type ValueNode } from '../language/ast';
 
+import type { GraphQLInputType } from '../type/definition';
 import { GraphQLID } from '../type/scalars';
 import {
-  type GraphQLInputType,
   isLeafType,
   isEnumType,
   isInputObjectType,

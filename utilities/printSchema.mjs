@@ -5,7 +5,7 @@ import { print } from "../language/printer.mjs";
 import { printBlockString } from "../language/blockString.mjs";
 import { isIntrospectionType } from "../type/introspection.mjs";
 import { GraphQLString, isSpecifiedScalarType } from "../type/scalars.mjs";
-import { GraphQLDirective, DEFAULT_DEPRECATION_REASON, isSpecifiedDirective } from "../type/directives.mjs";
+import { DEFAULT_DEPRECATION_REASON, isSpecifiedDirective } from "../type/directives.mjs";
 import { isScalarType, isObjectType, isInterfaceType, isUnionType, isEnumType, isInputObjectType } from "../type/definition.mjs";
 import { astFromValue } from "./astFromValue.mjs";
 
@@ -216,14 +216,15 @@ function printDirective(directive, options) {
 }
 
 function printDeprecated(fieldOrEnumVal) {
-  if (!fieldOrEnumVal.isDeprecated) {
+  var deprecationReason = fieldOrEnumVal.deprecationReason;
+
+  if (deprecationReason == null) {
     return '';
   }
 
-  var reason = fieldOrEnumVal.deprecationReason;
-  var reasonAST = astFromValue(reason, GraphQLString);
+  var reasonAST = astFromValue(deprecationReason, GraphQLString);
 
-  if (reasonAST && reason !== DEFAULT_DEPRECATION_REASON) {
+  if (reasonAST && deprecationReason !== DEFAULT_DEPRECATION_REASON) {
     return ' @deprecated(reason: ' + print(reasonAST) + ')';
   }
 

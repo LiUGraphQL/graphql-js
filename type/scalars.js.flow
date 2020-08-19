@@ -1,5 +1,3 @@
-// @flow strict
-
 import isFinite from '../polyfills/isFinite';
 import isInteger from '../polyfills/isInteger';
 
@@ -11,7 +9,8 @@ import { print } from '../language/printer';
 
 import { GraphQLError } from '../error/GraphQLError';
 
-import { type GraphQLNamedType, GraphQLScalarType } from './definition';
+import type { GraphQLNamedType } from './definition';
+import { GraphQLScalarType } from './definition';
 
 // As per the GraphQL Spec, Integers are only treated as valid when a valid
 // 32-bit signed integer, providing the broadest support across platforms.
